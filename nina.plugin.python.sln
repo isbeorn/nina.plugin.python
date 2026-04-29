@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36301.6 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nina.plugin.python", "nina.plugin.python.csproj", "{1644A1E3-FC9F-47C8-AD3D-360695197B3F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1644A1E3-FC9F-47C8-AD3D-360695197B3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1644A1E3-FC9F-47C8-AD3D-360695197B3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1644A1E3-FC9F-47C8-AD3D-360695197B3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1644A1E3-FC9F-47C8-AD3D-360695197B3F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C272227F-661C-42A2-A500-EBA36349F47D}
+	EndGlobalSection
+EndGlobal

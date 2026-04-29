@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NINA.Plugin.Python</RootNamespace>
+    <AssemblyName>NINA.Plugin.Python</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <UseWPF>true</UseWPF>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="NINA.Plugin" Version="3.3.0.1034-nightly" />
+    <PackageReference Include="pythonnet" Version="3.1.0-rc.0" />
+  </ItemGroup>
+  <PropertyGroup>
+    <NinaPluginDeployDir>$(LOCALAPPDATA)\NINA\Plugins\3.0.0\Python Scripting\</NinaPluginDeployDir>
+    <NinaPluginDeployEnabled Condition="'$(NinaPluginDeployEnabled)' == '' and '$(LOCALAPPDATA)' != ''">true</NinaPluginDeployEnabled>
+    <NinaPluginDeployEnabled Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true' or '$(BUILD_BUILDID)' != ''">false</NinaPluginDeployEnabled>
+  </PropertyGroup>
+  <Target Name="DeployToNinaPluginFolder" AfterTargets="Build" Condition="'$(MSBuildProjectName)' == 'nina.plugin.python' and '$(NinaPluginDeployEnabled)' == 'true'">
+    <ItemGroup>
+      <NinaPluginDeployFile Include="$(TargetPath)" />
+      <NinaPluginDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+      <NinaPluginDeployFile Include="$(TargetDir)$(TargetName).deps.json" Condition="Exists('$(TargetDir)$(TargetName).deps.json')" />
+      <NinaPluginDeployFile Include="$(TargetDir)$(TargetName).runtimeconfig.json" Condition="Exists('$(TargetDir)$(TargetName).runtimeconfig.json')" />
+      <NinaPluginDeployFile Include="$(TargetDir)$(TargetFileName).config" Condition="Exists('$(TargetDir)$(TargetFileName).config')" />
+      <NinaPluginDeployFile Include="$(TargetDir)Python.Runtime*.dll" />
+    </ItemGroup>
+    <MakeDir Directories="$(NinaPluginDeployDir)" />
+    <Copy SourceFiles="@(NinaPluginDeployFile)" DestinationFolder="$(NinaPluginDeployDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

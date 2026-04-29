@@ -1,0 +1,82 @@
+﻿<ResourceDictionary
+    x:Class="NINA.Plugin.Python.PythonScriptingTestCategory.PluginItemTemplate"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+    xmlns:local="clr-namespace:NINA.Plugin.Python.PythonScriptingTestCategory"
+    xmlns:mini="clr-namespace:NINA.View.Sequencer.MiniSequencer;assembly=NINA.Sequencer"
+    xmlns:nina="clr-namespace:NINA.View.Sequencer;assembly=NINA.Sequencer">
+    <!--  This geometrygroup defines a custom SVG to be used with the plugin instruction  -->
+    <GeometryGroup x:Key="Plugin_Test_SVG">
+        <PathGeometry Figures="M 275.412,0C 220.484,0 175.959,43.1147 175.959,96.2973L 175.959,162.964L 348.088,162.964L 348.088,181.479L 99.4533,181.479C 44.5267,181.479 0,224.593 0,277.776L 0,422.224C 0,475.407 44.5267,518.516 99.4533,518.516L 156.828,518.516L 156.828,437.036C 156.828,383.855 201.36,340.74 256.287,340.74L 439.891,340.74C 486.369,340.74 524.041,304.26 524.041,259.26L 524.041,96.2973C 524.041,43.1147 479.516,0 424.588,0M 252.459,118.521C 271.473,118.521 286.885,103.593 286.885,85.188C 286.885,66.7759 271.473,51.8547 252.459,51.8547C 233.443,51.8547 218.031,66.7759 218.031,85.188C 218.031,103.593 233.443,118.521 252.459,118.521 Z " />
+        <PathGeometry Figures="M 424.584,700C 479.511,700 524.041,656.885 524.041,603.703L 524.041,537.036L 351.907,537.036L 351.907,518.521L 600.541,518.521C 655.469,518.521 699.995,475.407 699.995,422.224L 699.995,277.776C 699.995,224.593 655.469,181.484 600.541,181.484L 543.167,181.484L 543.167,262.964C 543.167,316.145 498.636,359.26 443.713,359.26L 260.104,359.26C 213.625,359.26 175.953,395.74 175.953,440.74L 175.953,603.703C 175.953,656.885 220.479,700 275.407,700M 447.536,581.484C 428.521,581.484 413.109,596.407 413.109,614.812C 413.109,633.224 428.521,648.145 447.536,648.145C 466.552,648.145 481.964,633.224 481.964,614.812C 481.964,596.407 466.552,581.484 447.536,581.484 Z " />
+    </GeometryGroup>
+
+    <!--  The definition of the plugin test instruction style  -->
+    <!--  The DataType has to be defined as the instruction in context  -->
+    <DataTemplate DataType="{x:Type local:PythonScriptingInstruction}">
+        <nina:SequenceBlockView>
+            <nina:SequenceBlockView.SequenceItemContent>
+                <avalon:TextEditor
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    HorizontalScrollBarVisibility="Disabled"
+                    ShowLineNumbers="True"
+                    SyntaxHighlighting="Python"
+                    VerticalScrollBarVisibility="Auto" />
+            </nina:SequenceBlockView.SequenceItemContent>
+        </nina:SequenceBlockView>
+    </DataTemplate>
+
+    <!--  The definition of the test instruction plugin style in the mini format on the imaging tab  -->
+    <!--  The Key has to be defined as the fully qualified instruction name and the "_Mini" postfix  -->
+    <DataTemplate x:Key="NINA.Plugin.Python.PythonScriptingTestCategory.PythonScriptingInstruction_Mini">
+        <mini:MiniSequenceItem>
+            <mini:MiniSequenceItem.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        MinWidth="40"
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Text}"
+                        TextAlignment="Right" />
+                </StackPanel>
+            </mini:MiniSequenceItem.SequenceItemContent>
+        </mini:MiniSequenceItem>
+    </DataTemplate>
+
+    <!--  The definition of the plugin test condition style  -->
+    <!--  The DataType has to be defined as the instruction in context  -->
+    <DataTemplate DataType="{x:Type local:PythonScriptingCondition}">
+        <nina:SequenceBlockView>
+            <nina:SequenceBlockView.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Is truthy" />
+
+                    <CheckBox
+                        MinWidth="40"
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        IsChecked="{Binding IsTruthy}" />
+                </StackPanel>
+            </nina:SequenceBlockView.SequenceItemContent>
+        </nina:SequenceBlockView>
+    </DataTemplate>
+
+    <!--  The definition of the test condition plugin style in the mini format on the imaging tab  -->
+    <!--  The Key has to be defined as the fully qualified instruction name and the "_Mini" postfix  -->
+    <DataTemplate x:Key="NINA.Plugin.Python.PythonScriptingTestCategory.PythonScriptingCondition_Mini">
+        <mini:MiniSequenceItem>
+            <mini:MiniSequenceItem.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox
+                        MinWidth="40"
+                        VerticalAlignment="Center"
+                        IsChecked="{Binding IsTruthy}" />
+                </StackPanel>
+            </mini:MiniSequenceItem.SequenceItemContent>
+        </mini:MiniSequenceItem>
+    </DataTemplate>
+</ResourceDictionary>
