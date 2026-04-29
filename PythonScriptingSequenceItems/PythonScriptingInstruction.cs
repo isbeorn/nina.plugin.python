@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
@@ -29,11 +30,13 @@ using Python.Runtime;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace NINA.Plugin.Python.PythonScriptingTestCategory {
 
@@ -168,6 +171,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             this.messageBroker = messageBroker;
             this.symbolBroker = symbolBroker;
             this.templateLinkResolver = templateLinkResolver;
+            LoadScriptFromFileCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(LoadScriptFromFile);
         }
 
         public PythonScriptingInstruction(PythonScriptingInstruction copyMe) : this(
@@ -212,6 +216,8 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             copyMe.symbolBroker,
             copyMe.templateLinkResolver) {
             CopyMetaData(copyMe);
+            Script = copyMe.Script;
+            ScriptExpanded = copyMe.ScriptExpanded;
         }
 
         /// <summary>
@@ -231,6 +237,33 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
 
             camera.Disconnect().Wait()
             """;
+
+        [ObservableProperty]
+        [property: JsonProperty]
+        private bool scriptExpanded = true;
+
+        public ICommand LoadScriptFromFileCommand { get; }
+
+        private void LoadScriptFromFile() {
+            var dialog = new OpenFileDialog {
+                Title = "Load Python script",
+                FileName = "",
+                DefaultExt = ".py",
+                Filter = "Python scripts|*.py;*.pyw|Text files|*.txt|All files|*.*",
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog() != true) {
+                return;
+            }
+
+            try {
+                Script = File.ReadAllText(dialog.FileName);
+            } catch (Exception ex) {
+                Logger.Error("Failed to load Python script file", ex);
+                Notification.ShowError($"Failed to load Python script file: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// The core logic when the sequence item is running resides here

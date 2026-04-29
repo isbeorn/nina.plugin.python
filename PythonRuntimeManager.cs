@@ -24,6 +24,26 @@ namespace NINA.Plugin.Python {
             }
         }
 
+        public static void PrepareForApplicationShutdown() {
+            if (initializedByPlugin) {
+                Logger.Info("Python scripting engine left initialized for process exit");
+            }
+        }
+
+        public static PythonSetupTestResult TestSetup() {
+            string pythonDllPath = ResolvePythonDllPath();
+            string pythonVersion = string.Empty;
+            string pythonExecutable = string.Empty;
+
+            Execute(() => {
+                using var sys = Py.Import("sys");
+                pythonVersion = sys.GetAttr("version").ToString();
+                pythonExecutable = sys.GetAttr("executable").ToString();
+            });
+
+            return new PythonSetupTestResult(pythonDllPath, pythonVersion, pythonExecutable);
+        }
+
         public static void Shutdown() {
             lock (syncRoot) {
                 if (!initializedByPlugin) {
@@ -99,5 +119,17 @@ namespace NINA.Plugin.Python {
                 DefaultPythonVersionFolder,
                 DefaultPythonDllFileName);
         }
+    }
+
+    internal class PythonSetupTestResult {
+        public PythonSetupTestResult(string pythonDllPath, string pythonVersion, string pythonExecutable) {
+            PythonDllPath = pythonDllPath;
+            PythonVersion = pythonVersion;
+            PythonExecutable = pythonExecutable;
+        }
+
+        public string PythonDllPath { get; }
+        public string PythonVersion { get; }
+        public string PythonExecutable { get; }
     }
 }
