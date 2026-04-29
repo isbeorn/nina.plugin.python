@@ -200,4 +200,130 @@
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>
     </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:PythonScriptingTrigger}">
+        <nina:SequenceBlockView>
+            <nina:SequenceBlockView.SequenceItemContent>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        Margin="5,0,0,6"
+                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                        Text="Sequential containers evaluate this predicate at sequence item boundaries. Keep it fast; avoid sleeps, long device calls, captures, or hardware movement. Put the work that should run into Triggered Instructions."
+                        TextWrapping="Wrap" />
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="5,0,0,6"
+                        HorizontalAlignment="Left"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            Foreground="{DynamicResource ButtonForegroundBrush}"
+                            Text="When" />
+                        <ComboBox
+                            Width="190"
+                            HorizontalAlignment="Left"
+                            DisplayMemberPath="Label"
+                            ItemsSource="{Binding TimingOptions}"
+                            SelectedValue="{Binding Timing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedValuePath="Value" />
+                    </StackPanel>
+
+                    <Expander
+                        Grid.Row="2"
+                        Margin="5,0,0,0"
+                        HorizontalContentAlignment="Stretch"
+                        IsExpanded="{Binding ScriptExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <Expander.Header>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Text="Trigger Predicate Script" />
+                                <Button
+                                    Grid.Column="1"
+                                    Width="20"
+                                    Height="20"
+                                    Margin="5,0,0,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding LoadScriptFromFileCommand}"
+                                    Style="{StaticResource BackgroundButton}"
+                                    ToolTip="Replace the trigger script with the contents of a Python file">
+                                    <Path
+                                        Margin="2,10,2,0"
+                                        Data="{StaticResource DotsSVG}"
+                                        Fill="{StaticResource ButtonForegroundBrush}"
+                                        Stretch="Uniform"
+                                        UseLayoutRounding="True" />
+                                </Button>
+                            </Grid>
+                        </Expander.Header>
+                        <Border
+                            Margin="0,4,0,0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                            <avalon:TextEditor
+                                MinWidth="40"
+                                Margin="0,4,0,0"
+                                Padding="6"
+                                HorizontalAlignment="Stretch"
+                                local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                local:TextEditorHelper.UseApplicationTheme="True"
+                                Background="{DynamicResource SecondaryBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                FontFamily="Consolas"
+                                FontSize="13"
+                                Foreground="{DynamicResource ButtonForegroundBrush}"
+                                HorizontalScrollBarVisibility="Disabled"
+                                LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                ShowLineNumbers="True"
+                                SyntaxHighlighting="Python"
+                                VerticalScrollBarVisibility="Auto">
+                                <i:Interaction.Behaviors>
+                                    <wpfbehaviors:BubbleScrollEvent />
+                                </i:Interaction.Behaviors>
+                            </avalon:TextEditor>
+                        </Border>
+                    </Expander>
+
+                    <Expander
+                        Grid.Row="3"
+                        Margin="5,8,0,0"
+                        HorizontalContentAlignment="Stretch"
+                        IsExpanded="{Binding TriggeredInstructionsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <Expander.Header>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="Triggered Instructions" />
+                        </Expander.Header>
+                        <HeaderedContentControl
+                            Background="{StaticResource BackgroundBrush}"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Content="{Binding TriggerRunner}"
+                            Header="Drop instructions here. They run when the Python predicate assigns a truthy result."
+                            Style="{StaticResource SequencerTriggerWorkflowInstructionDropAreaStyle}"
+                            Tag="Drop triggered instructions here" />
+                    </Expander>
+                </Grid>
+            </nina:SequenceBlockView.SequenceItemContent>
+        </nina:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Plugin.Python.PythonScriptingTestCategory.PythonScriptingTrigger_Mini">
+        <mini:MiniTrigger />
+    </DataTemplate>
 </ResourceDictionary>

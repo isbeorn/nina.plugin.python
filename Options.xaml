@@ -105,13 +105,13 @@
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Python Scripting" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            This plugin adds Python Script and Python Condition items to the Advanced Sequencer. They execute Python code inside the N.I.N.A. process through pythonnet, with N.I.N.A. services and mediators injected into the Python scope.
+                            This plugin adds Python Script, Python Condition, and Python Trigger items to the Advanced Sequencer. They execute Python code inside the N.I.N.A. process through pythonnet, with N.I.N.A. services and mediators injected into the Python scope.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            A script instruction runs when the sequencer reaches the instruction. A condition script runs whenever the sequencer checks that condition and uses the script result to decide whether the set should continue. Both are trusted in-process code, not separate external processes and not sandboxed.
+                            A script instruction runs when the sequencer reaches the instruction. A condition script runs whenever the sequencer checks that condition and uses the script result to decide whether the set should continue. A trigger predicate runs at configured sequence item boundaries and starts its Triggered Instructions when result is truthy. All Python code is trusted in-process code, not separate external processes and not sandboxed.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            This page documents the Python Script instruction and Python Condition. Triggers are intentionally not covered here yet.
+                            Use the setup check first, then use the Instruction, Condition, Trigger, Lookup, and Examples tabs while building sequencer scripts.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Setup Check" />
@@ -215,6 +215,9 @@
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Each Python Condition check also creates a fresh Python scope, executes the condition script, and reads the variable named result. The condition uses normal Python truthiness for result.
                         </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Each Python Trigger predicate evaluation creates a fresh Python scope, executes the trigger script, and reads the variable named result. If result is truthy, N.I.N.A. runs the trigger's Triggered Instructions through the normal sequencer trigger runner.
+                        </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Threading and the GIL" />
                         <TextBlock Style="{StaticResource DocBodyText}">
@@ -243,7 +246,7 @@ camera.Disconnect().Wait()</TextBox>
                             The instruction injects the current CancellationToken as token. Long scripts should check token regularly. N.I.N.A. APIs that accept the token can also observe sequence cancellation.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Conditions do not receive progress or token because the sequencer calls condition checks synchronously. Keep condition logic short and avoid waits that would need cancellation.
+                            Conditions and trigger predicates do not receive progress or token because the sequencer calls these checks synchronously. Keep that logic short and avoid waits that would need cancellation. Triggered Instructions do receive their normal sequencer progress and cancellation handling.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -267,7 +270,7 @@ camera.Disconnect().Wait()</TextBox>
                             Add the Python Script instruction to the Advanced Sequencer from the Python Scripting category. The instruction contains a Python code editor. When the sequence reaches the item, the editor contents are executed as one Python script.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use the Condition tab for Python Condition behavior. Python-based triggers will be documented separately later.
+                            Use the Condition tab for Python Condition behavior and the Trigger tab for Python Trigger behavior.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What happens when the item starts" />
@@ -385,12 +388,101 @@ result = profile is not None</TextBox>
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="Trigger">
+                <ScrollViewer Style="{StaticResource DocTabScrollViewer}">
+                    <StackPanel Style="{StaticResource DocContentPanel}">
+                        <TextBlock Style="{StaticResource DocHeadingText}" Text="Using The Python Trigger" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Add the Python Trigger to an Advanced Sequencer trigger set from the Python Scripting category. The trigger has a Python predicate script, a timing selector, and a Triggered Instructions area. The predicate must assign a variable named result before it finishes.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            The Python script is only the decision point. It should quickly inspect current state and return true or false. Put captures, slews, autofocus, waits, device changes, and other real work in Triggered Instructions. Those instructions are run by N.I.N.A.'s normal trigger runner when result is truthy.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="When the predicate is checked" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            In sequential containers, N.I.N.A. evaluates triggers before each next sequence item starts. It also supports an after-item trigger pass after an item completes and the following item has been determined, before that following item starts. The Python Trigger timing selector chooses whether this predicate is evaluated before the next item, after the completed item, or in both passes.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            The same trigger evaluation cascade used by N.I.N.A. applies: triggers on the active container are evaluated, then triggers on parent containers are evaluated. Keep the predicate fast because it can be checked many times during a sequence.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What happens when the trigger is checked" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            - The embedded Python runtime is initialized if this is the first Python use in the current N.I.N.A. process.<LineBreak />
+                            - A fresh Python scope is created for this predicate evaluation.<LineBreak />
+                            - The same N.I.N.A. services and mediators used by instruction and condition scripts are injected into that scope.<LineBreak />
+                            - Trigger context values phase, previousItem, nextItem, parent, trigger, triggerRunner, and state are injected.<LineBreak />
+                            - Common helper .NET types such as TimeSpan, Guid, Coordinates, TopocentricCoordinates, SiderealShiftTrackingRate, and FilterInfo are injected.<LineBreak />
+                            - The script text is executed.<LineBreak />
+                            - The variable result is read with normal Python truthiness.<LineBreak />
+                            - If result is truthy, N.I.N.A. executes the configured Triggered Instructions.</TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Default script" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            New triggers start with result = False. Change result to a fast expression that decides whether Triggered Instructions should run.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}"># N.I.N.A. checks this at sequence item boundaries.
+# phase is "before" before nextItem starts, or "after" after previousItem completes.
+# Keep this predicate fast. Put long work in Triggered Instructions.
+# Set result truthy to run the triggered instructions.
+result = False</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Trigger context" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            phase is the string "before" or "after". previousItem is the item that just ran and can be None. nextItem is the item about to run and can be None. parent is the owning sequence container. trigger is the Python Trigger object. triggerRunner is the container that holds Triggered Instructions. state is a per-trigger dictionary that is reset when the sequence block initializes.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}"># Fire only during the before-item pass.
+result = phase == "before" and nextItem is not None</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Counter example" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Use state for small predicate state that should survive between trigger checks in the same sequence block. Do not use it to hold device objects, tasks, Python threads, or large data.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">count = state["count"] if state.ContainsKey("count") else 0
+count = count + 1
+state["count"] = count
+
+# Run Triggered Instructions every third before-item check.
+result = phase == "before" and count % 3 == 0</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Equipment-state example" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Reading mediator info is appropriate for a trigger predicate. Starting long-running work is not. Add that work as a normal instruction under Triggered Instructions.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">camera_info = camera.GetInfo()
+result = phase == "before" and camera_info.Connected</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Failure behavior" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            A syntax error, Python exception, .NET exception, failed Python runtime setup, or missing result variable prevents the predicate from returning true. If the predicate returns true and a Triggered Instruction fails, the trigger run follows N.I.N.A.'s normal trigger failure handling.
+                        </TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="Lookup">
                 <ScrollViewer Style="{StaticResource DocTabScrollViewer}">
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Interface Lookup" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use this table while writing instruction or condition scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, and condition context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
+                            Use this table while writing instruction, condition, or trigger scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, condition context values, and trigger context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
                         </TextBlock>
                         <TextBox
                             MinWidth="260"
@@ -564,9 +656,9 @@ result = profile is not None</TextBox>
             <TabItem Header="Examples">
                 <ScrollViewer Style="{StaticResource DocTabScrollViewer}">
                     <StackPanel Style="{StaticResource DocContentPanel}">
-                        <TextBlock Style="{StaticResource DocHeadingText}" Text="Instruction Examples" />
+                        <TextBlock Style="{StaticResource DocHeadingText}" Text="Examples" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            These examples show patterns for the Python Script instruction. They use only objects injected by the instruction.
+                            These examples show patterns for the Python Script instruction and short predicates for Python Condition and Python Trigger. They use only objects injected by the relevant sequencer item.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Single camera capture" />
@@ -637,6 +729,20 @@ finally:
     camera.Disconnect().Wait()</TextBox>
                             </ScrollViewer>
                         </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Trigger predicate using state" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            This belongs in a Python Trigger predicate. Put the actual action into Triggered Instructions.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">count = state["count"] if state.ContainsKey("count") else 0
+count = count + 1
+state["count"] = count
+
+result = phase == "before" and count % 5 == 0</TextBox>
+                            </ScrollViewer>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -658,12 +764,12 @@ finally:
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="The script runs once but not again" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Each instruction run and condition check gets a new script scope, but Python modules stay loaded in the interpreter. Avoid relying on accidental module-level state. If a module caches device objects or starts background work, make sure it has explicit cleanup.
+                            Each instruction run, condition check, and trigger predicate check gets a new script scope, but Python modules stay loaded in the interpreter. Avoid relying on accidental module-level state. If a module caches device objects or starts background work, make sure it has explicit cleanup.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="N.I.N.A. becomes unresponsive while the script runs" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The script is executing inside the N.I.N.A. process. Long CPU-bound Python loops, blocking waits, or device calls that never return will block the sequence item. Keep instruction scripts short, check token in instructions, and keep condition scripts especially fast because sequential containers check conditions while selecting each next item and after the block finishes.
+                            The script is executing inside the N.I.N.A. process. Long CPU-bound Python loops, blocking waits, or device calls that never return will block the sequence item. Keep instruction scripts short, check token in instructions, and keep condition and trigger predicate scripts especially fast because sequential containers check them at sequence item boundaries.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Application shutdown after using Python" />
