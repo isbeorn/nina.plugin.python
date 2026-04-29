@@ -107,15 +107,80 @@
     <DataTemplate DataType="{x:Type local:PythonScriptingCondition}">
         <nina:SequenceBlockView>
             <nina:SequenceBlockView.SequenceItemContent>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="Is truthy" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <CheckBox
-                        MinWidth="40"
+                    <TextBlock
+                        Margin="5,0,0,6"
+                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                        Text="Sequential containers check conditions while selecting each next item, including after an item completes, and after the block finishes to decide whether to repeat. Keep the script fast; avoid sleeps, long device calls, captures, or hardware movement."
+                        TextWrapping="Wrap" />
+
+                    <Expander
+                        Grid.Row="1"
                         Margin="5,0,0,0"
-                        VerticalAlignment="Center"
-                        IsChecked="{Binding IsTruthy}" />
-                </StackPanel>
+                        HorizontalContentAlignment="Stretch"
+                        IsExpanded="{Binding ScriptExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <Expander.Header>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Text="Condition Script" />
+                                <Button
+                                    Grid.Column="1"
+                                    Width="20"
+                                    Height="20"
+                                    Margin="5,0,0,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding LoadScriptFromFileCommand}"
+                                    Style="{StaticResource BackgroundButton}"
+                                    ToolTip="Replace the condition script with the contents of a Python file">
+                                    <Path
+                                        Margin="2,10,2,0"
+                                        Data="{StaticResource DotsSVG}"
+                                        Fill="{StaticResource ButtonForegroundBrush}"
+                                        Stretch="Uniform"
+                                        UseLayoutRounding="True" />
+                                </Button>
+                            </Grid>
+                        </Expander.Header>
+                        <Border
+                            Margin="0,4,0,0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                            <avalon:TextEditor
+                                MinWidth="40"
+                                Margin="0,4,0,0"
+                                Padding="6"
+                                HorizontalAlignment="Stretch"
+                                local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                local:TextEditorHelper.UseApplicationTheme="True"
+                                Background="{DynamicResource SecondaryBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                FontFamily="Consolas"
+                                FontSize="13"
+                                Foreground="{DynamicResource ButtonForegroundBrush}"
+                                HorizontalScrollBarVisibility="Disabled"
+                                LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                ShowLineNumbers="True"
+                                SyntaxHighlighting="Python"
+                                VerticalScrollBarVisibility="Auto">
+                                <i:Interaction.Behaviors>
+                                    <wpfbehaviors:BubbleScrollEvent />
+                                </i:Interaction.Behaviors>
+                            </avalon:TextEditor>
+                        </Border>
+                    </Expander>
+                </Grid>
             </nina:SequenceBlockView.SequenceItemContent>
         </nina:SequenceBlockView>
     </DataTemplate>
@@ -126,10 +191,11 @@
         <mini:MiniSequenceItem>
             <mini:MiniSequenceItem.SequenceItemContent>
                 <StackPanel Orientation="Horizontal">
-                    <CheckBox
+                    <TextBlock
                         MinWidth="40"
+                        Margin="5,0,0,0"
                         VerticalAlignment="Center"
-                        IsChecked="{Binding IsTruthy}" />
+                        Text="Python" />
                 </StackPanel>
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>

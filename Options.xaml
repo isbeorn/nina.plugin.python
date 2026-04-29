@@ -105,13 +105,13 @@
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Python Scripting" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            This plugin adds a Python Script instruction to the Advanced Sequencer. The instruction executes Python code inside the N.I.N.A. process through pythonnet, with N.I.N.A. services and mediators injected into the Python scope.
+                            This plugin adds Python Script and Python Condition items to the Advanced Sequencer. They execute Python code inside the N.I.N.A. process through pythonnet, with N.I.N.A. services and mediators injected into the Python scope.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The script runs when the sequencer reaches the instruction. It is intended for automation glue: call existing N.I.N.A. services, coordinate equipment actions, prepare captures, inspect application state, or call your own Python modules. It is not a separate external process and it is not sandboxed.
+                            A script instruction runs when the sequencer reaches the instruction. A condition script runs whenever the sequencer checks that condition and uses the script result to decide whether the set should continue. Both are trusted in-process code, not separate external processes and not sandboxed.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            This page documents the Python Script instruction only. Conditions and triggers are intentionally not covered here.
+                            This page documents the Python Script instruction and Python Condition. Triggers are intentionally not covered here yet.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Setup Check" />
@@ -195,7 +195,7 @@
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="When to use the setup test" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Run the setup test after installing Python, after changing PYTHONNET_PYDLL, after replacing Python.Runtime.dll, or when a sequence instruction fails before your script code starts. A successful test does not validate camera, telescope, focuser, or other equipment state; it only validates the embedded Python runtime.
+                            Run the setup test after installing Python, after changing PYTHONNET_PYDLL, after replacing Python.Runtime.dll, or when a Python sequencer item fails before your script code starts. A successful test does not validate camera, telescope, focuser, or other equipment state; it only validates the embedded Python runtime.
                         </TextBlock>
                     </StackPanel>
                 </ScrollViewer>
@@ -212,6 +212,9 @@
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Each Python Script instruction execution creates a fresh Python scope. Variables created inside one script are not intentionally injected into the next script scope. Imported Python modules are still normal Python modules, so module-level state can persist for the lifetime of the interpreter.
                         </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Each Python Condition check also creates a fresh Python scope, executes the condition script, and reads the variable named result. The condition uses normal Python truthiness for result.
+                        </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Threading and the GIL" />
                         <TextBlock Style="{StaticResource DocBodyText}">
@@ -220,7 +223,7 @@
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text=".NET objects in Python" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Injected values such as camera, telescope, imaging, sequence, profileService, and optionsVM are live .NET objects. Calling a method from Python is calling that .NET object directly inside N.I.N.A. Exceptions from .NET or Python propagate back to the sequence item and cause the instruction to fail.
+                            Injected values such as camera, telescope, imaging, sequence, profileService, and optionsVM are live .NET objects. Calling a method from Python is calling that .NET object directly inside N.I.N.A. Exceptions from .NET or Python propagate back to the sequence item and cause the instruction or condition to fail.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Async methods" />
@@ -238,6 +241,9 @@ camera.Disconnect().Wait()</TextBox>
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Cancellation" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             The instruction injects the current CancellationToken as token. Long scripts should check token regularly. N.I.N.A. APIs that accept the token can also observe sequence cancellation.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Conditions do not receive progress or token because the sequencer calls condition checks synchronously. Keep condition logic short and avoid waits that would need cancellation.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -261,7 +267,7 @@ camera.Disconnect().Wait()</TextBox>
                             Add the Python Script instruction to the Advanced Sequencer from the Python Scripting category. The instruction contains a Python code editor. When the sequence reaches the item, the editor contents are executed as one Python script.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            This documentation is restricted to the instruction. Python-based conditions and triggers will be documented separately later.
+                            Use the Condition tab for Python Condition behavior. Python-based triggers will be documented separately later.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What happens when the item starts" />
@@ -302,12 +308,89 @@ camera.Disconnect().Wait()</TextBox>
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="Condition">
+                <ScrollViewer Style="{StaticResource DocTabScrollViewer}">
+                    <StackPanel Style="{StaticResource DocContentPanel}">
+                        <TextBlock Style="{StaticResource DocHeadingText}" Text="Using The Python Condition" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Add the Python Condition to an Advanced Sequencer condition set from the Python Scripting category. The condition contains a Python code editor. The script must assign a variable named result before it finishes.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            In sequential containers, N.I.N.A. checks enabled conditions while selecting each next item, including after an item completes, and again after the block finishes to decide whether to reset and repeat. Parent container conditions are checked as part of the same decision. Keep the script fast. Avoid sleeps, long device calls, captures, equipment movement, network calls, or loops that wait for state changes.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What happens when the condition is checked" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            - The embedded Python runtime is initialized if this is the first Python use in the current N.I.N.A. process.<LineBreak />
+                            - A fresh Python scope is created for this check.<LineBreak />
+                            - The check is triggered by the sequential execution strategy while selecting the next item, after each item completes, and after the block finishes to decide whether to repeat.<LineBreak />
+                            - The same N.I.N.A. services and mediators used by the instruction are injected into that scope.<LineBreak />
+                            - Condition context values previousItem, nextItem, parent, and condition are injected.<LineBreak />
+                            - Common helper .NET types such as TimeSpan, Guid, Coordinates, TopocentricCoordinates, SiderealShiftTrackingRate, and FilterInfo are injected.<LineBreak />
+                            - The script text is executed.<LineBreak />
+                            - The variable result is read with normal Python truthiness.<LineBreak />
+                            - If the script throws or does not assign result, the condition fails and evaluates false.</TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Default script" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            New conditions start as always true. Replace the assignment with a fast expression that reads current N.I.N.A. state.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}"># In sequential containers, N.I.N.A. checks this while selecting each next item,
+# including after an item completes, and after the block finishes to decide repeat.
+# Keep it fast. Truthy result keeps the loop running; falsey stops it.
+result = True</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Condition context" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            previousItem and nextItem are the neighboring sequence items passed to the condition check and can be None. parent is the owning sequence container and can be None before the condition is attached. condition is the Python Condition object itself.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}"># Continue only when this condition is attached to a sequence container.
+result = parent is not None</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Fast equipment-state example" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Reading a mediator info object is appropriate for a condition. Starting a capture, slew, autofocus run, or other long operation is not.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">camera_info = camera.GetInfo()
+result = camera_info.Connected</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Profile-state example" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            The active profile is available as profile. Use it for quick reads of configured state, and avoid changing profile settings while a sequence is running unless the script is intentionally doing that.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}"># Replace this with the profile field you need to inspect.
+result = profile is not None</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Failure behavior" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            A syntax error, Python exception, .NET exception, failed Python runtime setup, or missing result variable causes the condition to fail. The sequencer catches the failure, marks the condition failed, raises the normal failure event, and treats the condition check as false.
+                        </TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="Lookup">
                 <ScrollViewer Style="{StaticResource DocTabScrollViewer}">
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Interface Lookup" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use this table while writing instruction scripts. It maps the Python variable name available in the script scope to the injected .NET interface or helper type. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
+                            Use this table while writing instruction or condition scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, and condition context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
                         </TextBlock>
                         <TextBox
                             MinWidth="260"
@@ -575,12 +658,12 @@ finally:
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="The script runs once but not again" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Each instruction run gets a new script scope, but Python modules stay loaded in the interpreter. Avoid relying on accidental module-level state. If a module caches device objects or starts background work, make sure it has explicit cleanup.
+                            Each instruction run and condition check gets a new script scope, but Python modules stay loaded in the interpreter. Avoid relying on accidental module-level state. If a module caches device objects or starts background work, make sure it has explicit cleanup.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="N.I.N.A. becomes unresponsive while the script runs" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The script is executing inside the N.I.N.A. process. Long CPU-bound Python loops, blocking waits, or device calls that never return will block the sequence instruction. Keep scripts short, check token, and prefer N.I.N.A. APIs that already support cancellation.
+                            The script is executing inside the N.I.N.A. process. Long CPU-bound Python loops, blocking waits, or device calls that never return will block the sequence item. Keep instruction scripts short, check token in instructions, and keep condition scripts especially fast because sequential containers check conditions while selecting each next item and after the block finishes.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Application shutdown after using Python" />

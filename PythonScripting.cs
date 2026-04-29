@@ -15,12 +15,15 @@ using NINA.Image.Interfaces;
 using NINA.PlateSolving.Interfaces;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
+using NINA.Plugin.Python.PythonScriptingTestCategory;
 using NINA.Plugin.Python.Properties;
 using NINA.Profile;
 using NINA.Profile.Interfaces;
 using NINA.Sequencer;
+using NINA.Sequencer.Container;
 using NINA.Sequencer.Interfaces.Mediator;
 using NINA.Sequencer.Logic;
+using NINA.Sequencer.SequenceItem;
 using NINA.WPF.Base.Interfaces;
 using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.Interfaces.ViewModel;
@@ -626,6 +629,10 @@ namespace NINA.Plugin.Python {
                 CreateLookupEntry("symbolBroker", typeof(ISymbolBroker), "Sequencer", "Sequencer symbol broker."),
                 CreateLookupEntry("templateLinkResolver", typeof(ITemplateLinkResolver), "Sequencer", "Template link resolver."),
                 CreateLookupEntry("sequence", typeof(ISequenceMediator), "Sequencer", "Sequence mediator."),
+                CreateLookupEntry("previousItem", typeof(ISequenceItem), "Condition Context", "Previous sequence item passed to a Python Condition check. This can be None."),
+                CreateLookupEntry("nextItem", typeof(ISequenceItem), "Condition Context", "Next sequence item passed to a Python Condition check. This can be None."),
+                CreateLookupEntry("parent", typeof(ISequenceContainer), "Condition Context", "Sequence container that owns the Python Condition. This can be None before the condition is attached."),
+                CreateLookupEntry("condition", typeof(PythonScriptingCondition), "Condition Context", "The Python Condition object that is currently being checked."),
                 CreateLookupEntry("optionsVM", typeof(IOptionsVM), "Application", "Application options view model."),
                 CreateLookupEntry("nighttimeCalculator", typeof(INighttimeCalculator), "Astronomy", "Nighttime calculator."),
                 CreateLookupEntry("twilightCalculator", typeof(ITwilightCalculator), "Astronomy", "Twilight calculator."),
@@ -636,10 +643,10 @@ namespace NINA.Plugin.Python {
                 CreateLookupEntry("starAnnotatorSelector", typeof(IPluggableBehaviorSelector<IStarAnnotator>), "Pluggable Behavior", "Star annotator selector."),
                 CreateLookupEntry("meridianFlipVMFactory", typeof(IMeridianFlipVMFactory), "Sequencer", "Meridian flip view model factory."),
                 CreateLookupEntry("autoFocusVMFactory", typeof(IAutoFocusVMFactory), "Imaging", "Auto focus view model factory."),
-                CreateLookupEntry("progress", typeof(IProgress<ApplicationStatus>), "Run Helper", "Progress reporter passed to the sequence item."),
-                CreateLookupEntry("token", typeof(CancellationToken), "Run Helper", "Cancellation token for the sequence item run."),
-                CreateLookupEntry("captureSequence", typeof(CaptureSequence), "Run Helper", "New capture sequence helper object."),
-                CreateLookupEntry("prepareImageParameters", typeof(PrepareImageParameters), "Run Helper", "New prepare image parameters helper object."),
+                CreateLookupEntry("progress", typeof(IProgress<ApplicationStatus>), "Instruction Helper", "Progress reporter passed to a Python Script instruction."),
+                CreateLookupEntry("token", typeof(CancellationToken), "Instruction Helper", "Cancellation token for a Python Script instruction run."),
+                CreateLookupEntry("captureSequence", typeof(CaptureSequence), "Instruction Helper", "New capture sequence helper object for Python Script instructions."),
+                CreateLookupEntry("prepareImageParameters", typeof(PrepareImageParameters), "Instruction Helper", "New prepare image parameters helper object for Python Script instructions."),
                 CreateLookupEntry("TimeSpan", "System.TimeSpan", typeof(TimeSpan), "Injected Type", "Common .NET time span type.", true),
                 CreateLookupEntry("Guid", "System.Guid", typeof(Guid), "Injected Type", "Common .NET GUID type.", true),
                 CreateLookupEntry("CaptureSequence", typeof(CaptureSequence), "Injected Type", "Capture sequence type.", true),

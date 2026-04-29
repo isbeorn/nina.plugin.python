@@ -15,11 +15,18 @@ namespace NINA.Plugin.Python {
         private static IntPtr allowThreadsState = IntPtr.Zero;
 
         public static void Execute(Action action) {
+            Execute(() => {
+                action();
+                return true;
+            });
+        }
+
+        public static T Execute<T>(Func<T> action) {
             lock (syncRoot) {
                 EnsureInitialized();
 
                 using (Py.GIL()) {
-                    action();
+                    return action();
                 }
             }
         }
