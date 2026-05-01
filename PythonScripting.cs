@@ -637,6 +637,7 @@ namespace NINA.Plugin.Python {
                 CreateLookupEntry("trigger", typeof(PythonScriptingTrigger), "Trigger Context", "The Python Trigger object that is currently being checked."),
                 CreateLookupEntry("triggerRunner", typeof(SequentialContainer), "Trigger Context", "Container that holds the Python Trigger's Triggered Instructions."),
                 CreateLookupEntry("state", typeof(IDictionary<string, object>), "Trigger Context", "Per-trigger dictionary reset when the sequence block initializes. Use it for small predicate state between trigger checks."),
+                CreateLookupEntry("__file__", typeof(string), "File Mode Context", "Resolved absolute script path injected only when the active script source is File. This value is absent for inline scripts."),
                 CreateLookupEntry("optionsVM", typeof(IOptionsVM), "Application", "Application options view model."),
                 CreateLookupEntry("nighttimeCalculator", typeof(INighttimeCalculator), "Astronomy", "Nighttime calculator."),
                 CreateLookupEntry("twilightCalculator", typeof(ITwilightCalculator), "Astronomy", "Twilight calculator."),

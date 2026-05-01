@@ -14,48 +14,76 @@
         <PathGeometry Figures="M 424.584,700C 479.511,700 524.041,656.885 524.041,603.703L 524.041,537.036L 351.907,537.036L 351.907,518.521L 600.541,518.521C 655.469,518.521 699.995,475.407 699.995,422.224L 699.995,277.776C 699.995,224.593 655.469,181.484 600.541,181.484L 543.167,181.484L 543.167,262.964C 543.167,316.145 498.636,359.26 443.713,359.26L 260.104,359.26C 213.625,359.26 175.953,395.74 175.953,440.74L 175.953,603.703C 175.953,656.885 220.479,700 275.407,700M 447.536,581.484C 428.521,581.484 413.109,596.407 413.109,614.812C 413.109,633.224 428.521,648.145 447.536,648.145C 466.552,648.145 481.964,633.224 481.964,614.812C 481.964,596.407 466.552,581.484 447.536,581.484 Z " />
     </GeometryGroup>
 
+    <Style x:Key="InlineScriptSourceContentStyle" TargetType="{x:Type FrameworkElement}">
+        <Setter Property="Visibility" Value="Visible" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ScriptSource}" Value="{x:Static local:PythonScriptSource.File}">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="FileScriptSourceContentStyle" TargetType="{x:Type FrameworkElement}">
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ScriptSource}" Value="{x:Static local:PythonScriptSource.File}">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!--  The definition of the plugin test instruction style  -->
     <!--  The DataType has to be defined as the instruction in context  -->
     <DataTemplate DataType="{x:Type local:PythonScriptingInstruction}">
         <nina:SequenceBlockView>
             <nina:SequenceBlockView.SequenceItemContent>
-                <Grid>
-                    <Expander
-                        Margin="5,0,0,0"
-                        HorizontalContentAlignment="Stretch"
-                        IsExpanded="{Binding ScriptExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                        <Expander.Header>
-                            <Grid HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Text="Script" />
-                                <Button
-                                    Grid.Column="1"
-                                    Width="20"
-                                    Height="20"
-                                    Margin="5,0,0,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding LoadScriptFromFileCommand}"
-                                    Style="{StaticResource BackgroundButton}"
-                                    ToolTip="Replace the script with the contents of a Python file">
-                                    <Path
-                                        Margin="2,10,2,0"
-                                        Data="{StaticResource DotsSVG}"
-                                        Fill="{StaticResource ButtonForegroundBrush}"
-                                        Stretch="Uniform"
-                                        UseLayoutRounding="True" />
-                                </Button>
-                            </Grid>
-                        </Expander.Header>
+                <Expander
+                    Margin="5,0,0,0"
+                    HorizontalContentAlignment="Stretch"
+                    IsExpanded="{Binding ScriptExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <Expander.Header>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="Script" />
+                            <ComboBox
+                                Grid.Column="1"
+                                Width="95"
+                                Margin="8,0,0,0"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{Binding ScriptSourceOptions}"
+                                SelectedValue="{Binding ScriptSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedValuePath="Value" />
+                            <Button
+                                Grid.Column="2"
+                                Width="20"
+                                Height="20"
+                                Margin="5,0,0,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Command="{Binding LoadScriptFromFileCommand}"
+                                Style="{StaticResource BackgroundButton}"
+                                ToolTip="{Binding SelectScriptFileToolTip}">
+                                <Path
+                                    Margin="2,10,2,0"
+                                    Data="{StaticResource DotsSVG}"
+                                    Fill="{StaticResource ButtonForegroundBrush}"
+                                    Stretch="Uniform"
+                                    UseLayoutRounding="True" />
+                            </Button>
+                        </Grid>
+                    </Expander.Header>
+                    <Grid>
                         <Border
                             Margin="0,4,0,0"
                             BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,1,0,0">
+                            BorderThickness="0,1,0,0"
+                            Style="{StaticResource InlineScriptSourceContentStyle}">
                             <avalon:TextEditor
                                 MinWidth="40"
                                 Margin="0,4,0,0"
@@ -79,8 +107,83 @@
                                 </i:Interaction.Behaviors>
                             </avalon:TextEditor>
                         </Border>
-                    </Expander>
-                </Grid>
+
+                        <StackPanel
+                            Margin="0,4,0,0"
+                            Orientation="Vertical"
+                            Style="{StaticResource FileScriptSourceContentStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    Text="File" />
+                                <TextBox
+                                    Grid.Column="1"
+                                    MinWidth="260"
+                                    Background="{DynamicResource SecondaryBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    Text="{Binding ScriptFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="2"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="6,0,0,0"
+                                    Command="{Binding RefreshScriptPreviewCommand}"
+                                    Style="{StaticResource BackgroundButton}"
+                                    ToolTip="Refresh preview from file">
+                                    <Path
+                                        Margin="4"
+                                        Data="{StaticResource RefreshSVG}"
+                                        Fill="{StaticResource ButtonForegroundBrush}"
+                                        Stretch="Uniform"
+                                        UseLayoutRounding="True" />
+                                </Button>
+                            </Grid>
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                Foreground="{DynamicResource ButtonForegroundBrush}"
+                                Opacity="0.75"
+                                Text="{Binding ScriptPreviewStatus}"
+                                TextWrapping="Wrap" />
+                            <Expander
+                                Margin="0,4,0,0"
+                                HorizontalContentAlignment="Stretch"
+                                Header="File Preview"
+                                IsExpanded="{Binding ScriptPreviewExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <avalon:TextEditor
+                                    MinWidth="40"
+                                    Margin="0,4,0,0"
+                                    Padding="6"
+                                    HorizontalAlignment="Stretch"
+                                    IsReadOnly="True"
+                                    local:TextEditorHelper.BindableText="{Binding ScriptPreview, Mode=OneWay}"
+                                    local:TextEditorHelper.UseApplicationTheme="True"
+                                    Background="{DynamicResource SecondaryBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    FontFamily="Consolas"
+                                    FontSize="13"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    HorizontalScrollBarVisibility="Disabled"
+                                    LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                    ShowLineNumbers="True"
+                                    SyntaxHighlighting="Python"
+                                    VerticalScrollBarVisibility="Auto">
+                                    <i:Interaction.Behaviors>
+                                        <wpfbehaviors:BubbleScrollEvent />
+                                    </i:Interaction.Behaviors>
+                                </avalon:TextEditor>
+                            </Expander>
+                        </StackPanel>
+                    </Grid>
+                </Expander>
             </nina:SequenceBlockView.SequenceItemContent>
         </nina:SequenceBlockView>
     </DataTemplate>
@@ -129,12 +232,21 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     Text="Condition Script" />
-                                <Button
+                                <ComboBox
                                     Grid.Column="1"
+                                    Width="95"
+                                    Margin="8,0,0,0"
+                                    DisplayMemberPath="Label"
+                                    ItemsSource="{Binding ScriptSourceOptions}"
+                                    SelectedValue="{Binding ScriptSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedValuePath="Value" />
+                                <Button
+                                    Grid.Column="2"
                                     Width="20"
                                     Height="20"
                                     Margin="5,0,0,0"
@@ -142,7 +254,7 @@
                                     VerticalAlignment="Center"
                                     Command="{Binding LoadScriptFromFileCommand}"
                                     Style="{StaticResource BackgroundButton}"
-                                    ToolTip="Replace the condition script with the contents of a Python file">
+                                    ToolTip="{Binding SelectScriptFileToolTip}">
                                     <Path
                                         Margin="2,10,2,0"
                                         Data="{StaticResource DotsSVG}"
@@ -152,33 +264,111 @@
                                 </Button>
                             </Grid>
                         </Expander.Header>
-                        <Border
-                            Margin="0,4,0,0"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,1,0,0">
-                            <avalon:TextEditor
-                                MinWidth="40"
+                        <Grid>
+                            <Border
                                 Margin="0,4,0,0"
-                                Padding="6"
-                                HorizontalAlignment="Stretch"
-                                local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                local:TextEditorHelper.UseApplicationTheme="True"
-                                Background="{DynamicResource SecondaryBackgroundBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                FontFamily="Consolas"
-                                FontSize="13"
-                                Foreground="{DynamicResource ButtonForegroundBrush}"
-                                HorizontalScrollBarVisibility="Disabled"
-                                LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
-                                ShowLineNumbers="True"
-                                SyntaxHighlighting="Python"
-                                VerticalScrollBarVisibility="Auto">
-                                <i:Interaction.Behaviors>
-                                    <wpfbehaviors:BubbleScrollEvent />
-                                </i:Interaction.Behaviors>
-                            </avalon:TextEditor>
-                        </Border>
+                                BorderThickness="0,1,0,0"
+                                Style="{StaticResource InlineScriptSourceContentStyle}">
+                                <avalon:TextEditor
+                                    MinWidth="40"
+                                    Margin="0,4,0,0"
+                                    Padding="6"
+                                    HorizontalAlignment="Stretch"
+                                    local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    local:TextEditorHelper.UseApplicationTheme="True"
+                                    Background="{DynamicResource SecondaryBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    FontFamily="Consolas"
+                                    FontSize="13"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    HorizontalScrollBarVisibility="Disabled"
+                                    LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                    ShowLineNumbers="True"
+                                    SyntaxHighlighting="Python"
+                                    VerticalScrollBarVisibility="Auto">
+                                    <i:Interaction.Behaviors>
+                                        <wpfbehaviors:BubbleScrollEvent />
+                                    </i:Interaction.Behaviors>
+                                </avalon:TextEditor>
+                            </Border>
+
+                            <StackPanel
+                                Margin="0,4,0,0"
+                                Orientation="Vertical"
+                                Style="{StaticResource FileScriptSourceContentStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        Text="File" />
+                                    <TextBox
+                                        Grid.Column="1"
+                                        MinWidth="260"
+                                        Background="{DynamicResource SecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        Text="{Binding ScriptFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button
+                                        Grid.Column="2"
+                                        Width="24"
+                                        Height="24"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding RefreshScriptPreviewCommand}"
+                                        Style="{StaticResource BackgroundButton}"
+                                        ToolTip="Refresh preview from file">
+                                        <Path
+                                            Margin="4"
+                                            Data="{StaticResource RefreshSVG}"
+                                            Fill="{StaticResource ButtonForegroundBrush}"
+                                            Stretch="Uniform"
+                                            UseLayoutRounding="True" />
+                                    </Button>
+                                </Grid>
+                                <TextBlock
+                                    Margin="0,4,0,0"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    Opacity="0.75"
+                                    Text="{Binding ScriptPreviewStatus}"
+                                    TextWrapping="Wrap" />
+                                <Expander
+                                    Margin="0,4,0,0"
+                                    HorizontalContentAlignment="Stretch"
+                                    Header="File Preview"
+                                    IsExpanded="{Binding ScriptPreviewExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <avalon:TextEditor
+                                        MinWidth="40"
+                                        Margin="0,4,0,0"
+                                        Padding="6"
+                                        HorizontalAlignment="Stretch"
+                                        IsReadOnly="True"
+                                        local:TextEditorHelper.BindableText="{Binding ScriptPreview, Mode=OneWay}"
+                                        local:TextEditorHelper.UseApplicationTheme="True"
+                                        Background="{DynamicResource SecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        FontFamily="Consolas"
+                                        FontSize="13"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        HorizontalScrollBarVisibility="Disabled"
+                                        LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                        ShowLineNumbers="True"
+                                        SyntaxHighlighting="Python"
+                                        VerticalScrollBarVisibility="Auto">
+                                        <i:Interaction.Behaviors>
+                                            <wpfbehaviors:BubbleScrollEvent />
+                                        </i:Interaction.Behaviors>
+                                    </avalon:TextEditor>
+                                </Expander>
+                            </StackPanel>
+                        </Grid>
                     </Expander>
                 </Grid>
             </nina:SequenceBlockView.SequenceItemContent>
@@ -247,12 +437,21 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     Text="Trigger Predicate Script" />
-                                <Button
+                                <ComboBox
                                     Grid.Column="1"
+                                    Width="95"
+                                    Margin="8,0,0,0"
+                                    DisplayMemberPath="Label"
+                                    ItemsSource="{Binding ScriptSourceOptions}"
+                                    SelectedValue="{Binding ScriptSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedValuePath="Value" />
+                                <Button
+                                    Grid.Column="2"
                                     Width="20"
                                     Height="20"
                                     Margin="5,0,0,0"
@@ -260,7 +459,7 @@
                                     VerticalAlignment="Center"
                                     Command="{Binding LoadScriptFromFileCommand}"
                                     Style="{StaticResource BackgroundButton}"
-                                    ToolTip="Replace the trigger script with the contents of a Python file">
+                                    ToolTip="{Binding SelectScriptFileToolTip}">
                                     <Path
                                         Margin="2,10,2,0"
                                         Data="{StaticResource DotsSVG}"
@@ -270,33 +469,111 @@
                                 </Button>
                             </Grid>
                         </Expander.Header>
-                        <Border
-                            Margin="0,4,0,0"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,1,0,0">
-                            <avalon:TextEditor
-                                MinWidth="40"
+                        <Grid>
+                            <Border
                                 Margin="0,4,0,0"
-                                Padding="6"
-                                HorizontalAlignment="Stretch"
-                                local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                local:TextEditorHelper.UseApplicationTheme="True"
-                                Background="{DynamicResource SecondaryBackgroundBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                FontFamily="Consolas"
-                                FontSize="13"
-                                Foreground="{DynamicResource ButtonForegroundBrush}"
-                                HorizontalScrollBarVisibility="Disabled"
-                                LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
-                                ShowLineNumbers="True"
-                                SyntaxHighlighting="Python"
-                                VerticalScrollBarVisibility="Auto">
-                                <i:Interaction.Behaviors>
-                                    <wpfbehaviors:BubbleScrollEvent />
-                                </i:Interaction.Behaviors>
-                            </avalon:TextEditor>
-                        </Border>
+                                BorderThickness="0,1,0,0"
+                                Style="{StaticResource InlineScriptSourceContentStyle}">
+                                <avalon:TextEditor
+                                    MinWidth="40"
+                                    Margin="0,4,0,0"
+                                    Padding="6"
+                                    HorizontalAlignment="Stretch"
+                                    local:TextEditorHelper.BindableText="{Binding Script, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    local:TextEditorHelper.UseApplicationTheme="True"
+                                    Background="{DynamicResource SecondaryBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    FontFamily="Consolas"
+                                    FontSize="13"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    HorizontalScrollBarVisibility="Disabled"
+                                    LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                    ShowLineNumbers="True"
+                                    SyntaxHighlighting="Python"
+                                    VerticalScrollBarVisibility="Auto">
+                                    <i:Interaction.Behaviors>
+                                        <wpfbehaviors:BubbleScrollEvent />
+                                    </i:Interaction.Behaviors>
+                                </avalon:TextEditor>
+                            </Border>
+
+                            <StackPanel
+                                Margin="0,4,0,0"
+                                Orientation="Vertical"
+                                Style="{StaticResource FileScriptSourceContentStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        Text="File" />
+                                    <TextBox
+                                        Grid.Column="1"
+                                        MinWidth="260"
+                                        Background="{DynamicResource SecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        Text="{Binding ScriptFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button
+                                        Grid.Column="2"
+                                        Width="24"
+                                        Height="24"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding RefreshScriptPreviewCommand}"
+                                        Style="{StaticResource BackgroundButton}"
+                                        ToolTip="Refresh preview from file">
+                                        <Path
+                                            Margin="4"
+                                            Data="{StaticResource RefreshSVG}"
+                                            Fill="{StaticResource ButtonForegroundBrush}"
+                                            Stretch="Uniform"
+                                            UseLayoutRounding="True" />
+                                    </Button>
+                                </Grid>
+                                <TextBlock
+                                    Margin="0,4,0,0"
+                                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                                    Opacity="0.75"
+                                    Text="{Binding ScriptPreviewStatus}"
+                                    TextWrapping="Wrap" />
+                                <Expander
+                                    Margin="0,4,0,0"
+                                    HorizontalContentAlignment="Stretch"
+                                    Header="File Preview"
+                                    IsExpanded="{Binding ScriptPreviewExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <avalon:TextEditor
+                                        MinWidth="40"
+                                        Margin="0,4,0,0"
+                                        Padding="6"
+                                        HorizontalAlignment="Stretch"
+                                        IsReadOnly="True"
+                                        local:TextEditorHelper.BindableText="{Binding ScriptPreview, Mode=OneWay}"
+                                        local:TextEditorHelper.UseApplicationTheme="True"
+                                        Background="{DynamicResource SecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        FontFamily="Consolas"
+                                        FontSize="13"
+                                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                                        HorizontalScrollBarVisibility="Disabled"
+                                        LineNumbersForeground="{DynamicResource ButtonForegroundDisabledBrush}"
+                                        ShowLineNumbers="True"
+                                        SyntaxHighlighting="Python"
+                                        VerticalScrollBarVisibility="Auto">
+                                        <i:Interaction.Behaviors>
+                                            <wpfbehaviors:BubbleScrollEvent />
+                                        </i:Interaction.Behaviors>
+                                    </avalon:TextEditor>
+                                </Expander>
+                            </StackPanel>
+                        </Grid>
                     </Expander>
 
                     <Expander

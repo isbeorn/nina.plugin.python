@@ -111,6 +111,9 @@
                             A script instruction runs when the sequencer reaches the instruction. A condition script runs whenever the sequencer checks that condition and uses the script result to decide whether the set should continue. A trigger predicate runs at configured sequence item boundaries and starts its Triggered Instructions when result is truthy. All Python code is trusted in-process code, not separate external processes and not sandboxed.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
+                            Each script can be inline or file-backed. File-backed scripts store only an absolute path and read the external UTF-8 Python file when they run or are checked.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
                             Use the setup check first, then use the Instruction, Condition, Trigger, Lookup, and Examples tabs while building sequencer scripts.
                         </TextBlock>
 
@@ -219,6 +222,20 @@
                             Each Python Trigger predicate evaluation creates a fresh Python scope, executes the trigger script, and reads the variable named result. If result is truthy, N.I.N.A. runs the trigger's Triggered Instructions through the normal sequencer trigger runner.
                         </TextBlock>
 
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Inline and file-backed scripts" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Each Python sequencer entity has a source selector. Inline mode stores and executes the editor text. File mode stores only an absolute file path and reads the file as UTF-8 when the entity executes or is checked. The file contents are not copied into the sequence.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            File mode requires a fully qualified path such as C:\Scripts\script.py or \\server\share\script.py. Relative paths, environment variables, and path shortcuts such as %USERPROFILE%, $env:USERPROFILE, and ~ are rejected. Validation checks only the path string; it does not check whether the file, drive, or network share exists.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            The dots button follows the selected source mode. In Inline mode it imports a file into the inline editor. In File mode it selects the external script path. File mode preview is read only and refreshes only when the refresh button is clicked. Execution always reads the file again and does not use preview text.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            File-backed scripts receive __file__ with the resolved absolute path. Inline scripts do not receive __file__. File-backed condition and trigger predicate scripts are read every check, so keep those files local, small, and fast; an unavailable network path can delay the sequence while the check is running.
+                        </TextBlock>
+
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Threading and the GIL" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Script execution is serialized through the Python global interpreter lock. The plugin runs the script while holding the GIL and releases it afterward. Do not create long-running background Python threads unless you understand pythonnet embedding and N.I.N.A. shutdown behavior.
@@ -268,6 +285,9 @@ camera.Disconnect().Wait()</TextBox>
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Using The Python Script Instruction" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Add the Python Script instruction to the Advanced Sequencer from the Python Scripting category. The instruction contains a Python code editor. When the sequence reaches the item, the editor contents are executed as one Python script.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            In File source mode, the instruction reads the selected absolute file path when the instruction starts. The file path is the source of truth; the preview is only a read-only view loaded on demand.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Use the Condition tab for Python Condition behavior and the Trigger tab for Python Trigger behavior.
@@ -320,6 +340,9 @@ camera.Disconnect().Wait()</TextBox>
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
                             In sequential containers, N.I.N.A. checks enabled conditions while selecting each next item, including after an item completes, and again after the block finishes to decide whether to reset and repeat. Parent container conditions are checked as part of the same decision. Keep the script fast. Avoid sleeps, long device calls, captures, equipment movement, network calls, or loops that wait for state changes.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            In File source mode, the condition reads the selected absolute file path every time the condition is checked. Use a local file for frequently checked conditions; an unavailable network path can delay the sequence during the check.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What happens when the condition is checked" />
@@ -397,6 +420,9 @@ result = profile is not None</TextBox>
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
                             The Python script is only the decision point. It should quickly inspect current state and return true or false. Put captures, slews, autofocus, waits, device changes, and other real work in Triggered Instructions. Those instructions are run by N.I.N.A.'s normal trigger runner when result is truthy.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            In File source mode, the trigger reads the selected absolute file path every time the predicate is checked. Use a local file for frequently checked trigger predicates; an unavailable network path can delay the sequence during the check.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="When the predicate is checked" />
@@ -482,7 +508,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Interface Lookup" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use this table while writing instruction, condition, or trigger scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, condition context values, and trigger context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
+                            Use this table while writing instruction, condition, or trigger scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, condition context values, trigger context values, and file-mode context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
                         </TextBlock>
                         <TextBox
                             MinWidth="260"
@@ -715,6 +741,19 @@ run_id = Guid.NewGuid()</TextBox>
                             </ScrollViewer>
                         </Border>
 
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using the file-backed script path" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            __file__ is available only when the entity is in File source mode. Use it to resolve sibling files from the external script location.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">from pathlib import Path
+
+script_dir = Path(__file__).parent
+config_path = script_dir / "settings.json"</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Use explicit error handling where useful" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             If cleanup must happen after a failed call, use normal Python try/finally. Exceptions still propagate after finally unless you catch and suppress them.
@@ -760,6 +799,11 @@ result = phase == "before" and count % 5 == 0</TextBox>
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="ImportError or ModuleNotFoundError" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             The package is not installed in the selected Python environment, or Python is using a different environment than expected. Run the setup test and verify the reported Python executable. Install packages into that environment.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="A file-backed script fails to read" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            File mode stores only the absolute path. If the file is moved, deleted, locked, or on an unavailable drive or network share, the instruction, condition, or trigger fails when it tries to read the file. Validation does not check file existence because that can block on unavailable network paths.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="The script runs once but not again" />

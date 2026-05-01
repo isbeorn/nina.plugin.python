@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Win32;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
 using NINA.Core.Interfaces;
@@ -23,13 +24,16 @@ using NINA.Sequencer.Conditions;
 using NINA.Sequencer.Interfaces.Mediator;
 using NINA.Sequencer.Logic;
 using NINA.Sequencer.SequenceItem;
+using NINA.Sequencer.Validations;
 using NINA.WPF.Base.Interfaces;
 using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.Interfaces.ViewModel;
 using Python.Runtime;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 
 namespace NINA.Plugin.Python.PythonScriptingTestCategory {
@@ -40,7 +44,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
     [ExportMetadata("Category", "Python Scripting")]
     [Export(typeof(ISequenceCondition))]
     [JsonObject(MemberSerialization.OptIn)]
-    public partial class PythonScriptingCondition : SequenceCondition {
+    public partial class PythonScriptingCondition : SequenceCondition, IValidatable {
         private readonly IProfileService profileService;
         private readonly ICameraMediator cameraMediator;
         private readonly ITelescopeMediator telescopeMediator;
@@ -81,6 +85,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         private readonly IMessageBroker messageBroker;
         private readonly ISymbolBroker symbolBroker;
         private readonly ITemplateLinkResolver templateLinkResolver;
+        private IList<string> issues = new List<string>();
+        private PythonScriptSource scriptSource = PythonScriptSource.Inline;
+        private string scriptFilePath = string.Empty;
 
         [ImportingConstructor]
         public PythonScriptingCondition(
@@ -165,7 +172,8 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             this.messageBroker = messageBroker;
             this.symbolBroker = symbolBroker;
             this.templateLinkResolver = templateLinkResolver;
-            LoadScriptFromFileCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(LoadScriptFromFile);
+            LoadScriptFromFileCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(SelectScriptFile);
+            RefreshScriptPreviewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(RefreshScriptPreview);
         }
 
         private PythonScriptingCondition(PythonScriptingCondition copyMe) : this(
@@ -212,6 +220,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             CopyMetaData(copyMe);
             Script = copyMe.Script;
             ScriptExpanded = copyMe.ScriptExpanded;
+            ScriptSource = copyMe.ScriptSource;
+            ScriptFilePath = copyMe.ScriptFilePath;
+            ScriptPreviewExpanded = copyMe.ScriptPreviewExpanded;
         }
 
         public override bool AllowMultiplePerSet => true;
@@ -229,11 +240,67 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         [property: JsonProperty]
         private bool scriptExpanded = true;
 
+        [ObservableProperty]
+        private string scriptPreview = string.Empty;
+
+        [ObservableProperty]
+        private string scriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
+
+        [ObservableProperty]
+        [property: JsonProperty]
+        private bool scriptPreviewExpanded;
+
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public PythonScriptSource ScriptSource {
+            get => scriptSource;
+            set {
+                if (scriptSource == value) {
+                    return;
+                }
+
+                scriptSource = value;
+                ClearScriptPreview();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(SelectScriptFileToolTip));
+                Validate();
+            }
+        }
+
+        [JsonProperty]
+        public string ScriptFilePath {
+            get => scriptFilePath;
+            set {
+                if (scriptFilePath == value) {
+                    return;
+                }
+
+                scriptFilePath = value ?? string.Empty;
+                ClearScriptPreview();
+                RaisePropertyChanged();
+                Validate();
+            }
+        }
+
+        public IReadOnlyList<PythonScriptSourceOption> ScriptSourceOptions => PythonScriptSourceHelper.SourceOptions;
+
+        public string SelectScriptFileToolTip => PythonScriptSourceHelper.SelectScriptFileToolTip(ScriptSource);
+
+        public IList<string> Issues {
+            get => issues;
+            set {
+                issues = value.ToList();
+                RaisePropertyChanged();
+            }
+        }
+
         public ICommand LoadScriptFromFileCommand { get; }
 
-        private void LoadScriptFromFile() {
+        public ICommand RefreshScriptPreviewCommand { get; }
+
+        private void SelectScriptFile() {
             var dialog = new OpenFileDialog {
-                Title = "Load Python condition script",
+                Title = ScriptSource == PythonScriptSource.File ? "Select external Python condition script" : "Import Python condition script",
                 FileName = "",
                 DefaultExt = ".py",
                 Filter = "Python scripts|*.py;*.pyw|Text files|*.txt|All files|*.*",
@@ -244,15 +311,40 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                 return;
             }
 
+            if (ScriptSource == PythonScriptSource.File) {
+                ScriptFilePath = dialog.FileName;
+                if (!PythonScriptSourceHelper.TryValidateFilePathSyntax(ScriptFilePath, out string issue)) {
+                    Notification.ShowError(issue);
+                    return;
+                }
+
+                RefreshScriptPreview();
+                return;
+            }
+
             try {
-                Script = File.ReadAllText(dialog.FileName);
+                Script = PythonScriptSourceHelper.ImportScriptFile(dialog.FileName);
             } catch (Exception ex) {
                 Logger.Error("Failed to load Python condition script file", ex);
                 Notification.ShowError($"Failed to load Python condition script file: {ex.Message}");
             }
         }
 
+        private void RefreshScriptPreview() {
+            try {
+                ScriptPreview = PythonScriptSourceHelper.ReadScriptFile(ScriptFilePath);
+                ScriptPreviewStatus = $"Preview loaded from {PythonScriptSourceHelper.ResolveAbsoluteFilePath(ScriptFilePath)} at {DateTime.Now:G}.";
+            } catch (Exception ex) {
+                ScriptPreview = string.Empty;
+                ScriptPreviewStatus = $"Preview failed: {ex.Message}";
+                Logger.Error("Failed to refresh Python condition script preview", ex);
+                Notification.ShowError($"Failed to refresh Python condition script preview: {ex.Message}");
+            }
+        }
+
         public override bool Check(ISequenceItem previousItem, ISequenceItem nextItem) {
+            var scriptToExecute = PythonScriptSourceHelper.GetScriptExecutionSource(ScriptSource, Script, ScriptFilePath);
+
             var result = PythonRuntimeManager.Execute(() => {
                 using var scope = Py.CreateScope();
 
@@ -315,7 +407,11 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                 scope.Set("FilterInfo", typeof(FilterInfo).ToPython());
                 scope.Set("PrepareImageParameters", typeof(PrepareImageParameters).ToPython());
 
-                scope.Exec(Script);
+                if (scriptToExecute.FilePath != null) {
+                    scope.Set("__file__", scriptToExecute.FilePath.ToPython());
+                }
+
+                scope.Exec(scriptToExecute.Script);
 
                 if (!scope.Contains("result")) {
                     throw new SequenceEntityFailedException("Python condition script must assign a result value.");
@@ -332,12 +428,28 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             return new PythonScriptingCondition(this);
         }
 
+        public bool Validate() {
+            var i = new List<string>();
+
+            if (!PythonScriptSourceHelper.TryValidateScriptSource(ScriptSource, ScriptFilePath, out string issue)) {
+                i.Add(issue);
+            }
+
+            Issues = i;
+            return i.Count == 0;
+        }
+
         public override string ToString() {
-            return $"Category: {Category}, Item: {nameof(PythonScriptingCondition)}, Script: {Script}";
+            return $"Category: {Category}, Item: {nameof(PythonScriptingCondition)}, Source: {ScriptSource}, Script: {Script}, File: {ScriptFilePath}";
         }
 
         private static object ToPythonOrNone(object value) {
             return value == null ? null : value.ToPython();
+        }
+
+        private void ClearScriptPreview() {
+            ScriptPreview = string.Empty;
+            ScriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
         }
     }
 }

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Win32;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
 using NINA.Core.Interfaces;
@@ -113,6 +114,8 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         private readonly ITemplateLinkResolver templateLinkResolver;
         private IList<string> issues = new List<string>();
         private IDictionary<string, object> state = new Dictionary<string, object>();
+        private PythonScriptSource scriptSource = PythonScriptSource.Inline;
+        private string scriptFilePath = string.Empty;
 
         [ImportingConstructor]
         public PythonScriptingTrigger(
@@ -198,7 +201,8 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             this.symbolBroker = symbolBroker;
             this.templateLinkResolver = templateLinkResolver;
             TriggerRunner = CreateAreaContainer();
-            LoadScriptFromFileCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(LoadScriptFromFile);
+            LoadScriptFromFileCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(SelectScriptFile);
+            RefreshScriptPreviewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(RefreshScriptPreview);
         }
 
         private PythonScriptingTrigger(PythonScriptingTrigger copyMe) : this(
@@ -247,6 +251,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             ScriptExpanded = copyMe.ScriptExpanded;
             TriggeredInstructionsExpanded = copyMe.TriggeredInstructionsExpanded;
             Timing = copyMe.Timing;
+            ScriptSource = copyMe.ScriptSource;
+            ScriptFilePath = copyMe.ScriptFilePath;
+            ScriptPreviewExpanded = copyMe.ScriptPreviewExpanded;
             TriggerRunner = (SequentialContainer)copyMe.TriggerRunner.Clone();
         }
 
@@ -264,6 +271,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
 
         [ObservableProperty]
         [property: JsonProperty]
+        [property: JsonConverter(typeof(StringEnumConverter))]
         private PythonTriggerTiming timing = PythonTriggerTiming.BeforeNextItem;
 
         [ObservableProperty]
@@ -281,10 +289,58 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         private bool scriptExpanded = true;
 
         [ObservableProperty]
+        private string scriptPreview = string.Empty;
+
+        [ObservableProperty]
+        private string scriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
+
+        [ObservableProperty]
+        [property: JsonProperty]
+        private bool scriptPreviewExpanded;
+
+        [ObservableProperty]
         [property: JsonProperty]
         private bool triggeredInstructionsExpanded = true;
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public PythonScriptSource ScriptSource {
+            get => scriptSource;
+            set {
+                if (scriptSource == value) {
+                    return;
+                }
+
+                scriptSource = value;
+                ClearScriptPreview();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(SelectScriptFileToolTip));
+                Validate();
+            }
+        }
+
+        [JsonProperty]
+        public string ScriptFilePath {
+            get => scriptFilePath;
+            set {
+                if (scriptFilePath == value) {
+                    return;
+                }
+
+                scriptFilePath = value ?? string.Empty;
+                ClearScriptPreview();
+                RaisePropertyChanged();
+                Validate();
+            }
+        }
+
+        public IReadOnlyList<PythonScriptSourceOption> ScriptSourceOptions => PythonScriptSourceHelper.SourceOptions;
+
+        public string SelectScriptFileToolTip => PythonScriptSourceHelper.SelectScriptFileToolTip(ScriptSource);
+
         public ICommand LoadScriptFromFileCommand { get; }
+
+        public ICommand RefreshScriptPreviewCommand { get; }
 
         [OnDeserialized]
         public void OnDeserialized(StreamingContext context) {
@@ -342,8 +398,13 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             var i = new List<string>();
             var valid = true;
 
-            if (string.IsNullOrWhiteSpace(Script)) {
+            if (ScriptSource == PythonScriptSource.Inline && string.IsNullOrWhiteSpace(Script)) {
                 i.Add("Python trigger script must not be empty.");
+                valid = false;
+            }
+
+            if (!PythonScriptSourceHelper.TryValidateScriptSource(ScriptSource, ScriptFilePath, out string issue)) {
+                i.Add(issue);
                 valid = false;
             }
 
@@ -367,9 +428,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             return $"Category: {Category}, Item: {nameof(PythonScriptingTrigger)}, Timing: {Timing}, Script: {Script}";
         }
 
-        private void LoadScriptFromFile() {
+        private void SelectScriptFile() {
             var dialog = new OpenFileDialog {
-                Title = "Load Python trigger script",
+                Title = ScriptSource == PythonScriptSource.File ? "Select external Python trigger script" : "Import Python trigger script",
                 FileName = "",
                 DefaultExt = ".py",
                 Filter = "Python scripts|*.py;*.pyw|Text files|*.txt|All files|*.*",
@@ -380,15 +441,40 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                 return;
             }
 
+            if (ScriptSource == PythonScriptSource.File) {
+                ScriptFilePath = dialog.FileName;
+                if (!PythonScriptSourceHelper.TryValidateFilePathSyntax(ScriptFilePath, out string issue)) {
+                    Notification.ShowError(issue);
+                    return;
+                }
+
+                RefreshScriptPreview();
+                return;
+            }
+
             try {
-                Script = File.ReadAllText(dialog.FileName);
+                Script = PythonScriptSourceHelper.ImportScriptFile(dialog.FileName);
             } catch (Exception ex) {
                 Logger.Error("Failed to load Python trigger script file", ex);
                 Notification.ShowError($"Failed to load Python trigger script file: {ex.Message}");
             }
         }
 
+        private void RefreshScriptPreview() {
+            try {
+                ScriptPreview = PythonScriptSourceHelper.ReadScriptFile(ScriptFilePath);
+                ScriptPreviewStatus = $"Preview loaded from {PythonScriptSourceHelper.ResolveAbsoluteFilePath(ScriptFilePath)} at {DateTime.Now:G}.";
+            } catch (Exception ex) {
+                ScriptPreview = string.Empty;
+                ScriptPreviewStatus = $"Preview failed: {ex.Message}";
+                Logger.Error("Failed to refresh Python trigger script preview", ex);
+                Notification.ShowError($"Failed to refresh Python trigger script preview: {ex.Message}");
+            }
+        }
+
         private bool EvaluateTriggerScript(string phase, ISequenceItem previousItem, ISequenceItem nextItem) {
+            var scriptToExecute = PythonScriptSourceHelper.GetScriptExecutionSource(ScriptSource, Script, ScriptFilePath);
+
             var result = PythonRuntimeManager.Execute(() => {
                 using var scope = Py.CreateScope();
 
@@ -454,7 +540,11 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                 scope.Set("FilterInfo", typeof(FilterInfo).ToPython());
                 scope.Set("PrepareImageParameters", typeof(PrepareImageParameters).ToPython());
 
-                scope.Exec(Script);
+                if (scriptToExecute.FilePath != null) {
+                    scope.Set("__file__", scriptToExecute.FilePath.ToPython());
+                }
+
+                scope.Exec(scriptToExecute.Script);
 
                 if (!scope.Contains("result")) {
                     throw new SequenceEntityFailedException("Python trigger script must assign a result value.");
@@ -490,6 +580,11 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
 
         private static object ToPythonOrNone(object value) {
             return value == null ? null : value.ToPython();
+        }
+
+        private void ClearScriptPreview() {
+            ScriptPreview = string.Empty;
+            ScriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
         }
     }
 }
