@@ -119,7 +119,10 @@
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Setup Check" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use this check after installing Python, after changing PYTHONNET_PYDLL, or after updating the plugin. The test resolves the Python DLL, initializes pythonnet if needed, imports sys, and reads the active Python version and executable path.
+                            Use this check after installing Python, after changing PYTHONNET_PYDLL or PYTHONNET_VENV, or after updating the plugin. The test resolves the Python DLL, initializes pythonnet if needed, imports sys, and reads the active Python version, executable path, prefix, and base prefix.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Set up default venv creates or reuses %LOCALAPPDATA%\NINA\PythonScripting\.venv, enables pip, and sets PYTHONNET_VENV for the current user. Get Python opens the Python download page when Python is not installed.
                         </TextBlock>
                         <StackPanel Margin="0,2,0,8" Orientation="Horizontal">
                             <Button
@@ -127,6 +130,18 @@
                                 Padding="10,4"
                                 Command="{Binding TestPythonSetupCommand}"
                                 Content="Test Python setup" />
+                            <Button
+                                MinWidth="170"
+                                Margin="8,0,0,0"
+                                Padding="10,4"
+                                Command="{Binding SetupPythonEnvironmentCommand}"
+                                Content="Set up default venv" />
+                            <Button
+                                MinWidth="150"
+                                Margin="8,0,0,0"
+                                Padding="10,4"
+                                Command="{Binding OpenPythonDownloadCommand}"
+                                Content="Get Python" />
                         </StackPanel>
                         <TextBox
                             MinHeight="72"
@@ -144,8 +159,9 @@
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What must be installed" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             - 64-bit N.I.N.A. and 64-bit Python must be used together.<LineBreak />
-                            - The plugin currently defaults to Python 3.12 at %LOCALAPPDATA%\Programs\Python\Python312\python312.dll.<LineBreak />
+                            - Without PYTHONNET_PYDLL or PYTHONNET_VENV, the plugin searches for Python through the Python launcher and known Python install folders. It prefers Python 3.12, then the highest discovered Python 3 install.<LineBreak />
                             - If Python is installed somewhere else, set PYTHONNET_PYDLL to the full path of the Python DLL and restart N.I.N.A.<LineBreak />
+                            - To use a virtual environment, set PYTHONNET_VENV to the virtual environment root directory and restart N.I.N.A.<LineBreak />
                             - Python.Runtime.dll is deployed with the plugin. The CPython runtime DLL itself is loaded from your Python installation, not copied into the plugin folder.</TextBlock>
                     </StackPanel>
                 </ScrollViewer>
@@ -160,7 +176,7 @@
                             The embedded runtime is loaded through pythonnet. Python must match the bitness of N.I.N.A.; for normal N.I.N.A. installations this means 64-bit Python. A 32-bit Python installation cannot be loaded into a 64-bit process.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The default path is:
+                            A typical user install path is:
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -181,24 +197,37 @@
                             Restart N.I.N.A. after changing the environment variable. The Python runtime DLL is resolved only before the embedded interpreter is initialized.
                         </TextBlock>
 
-                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Python packages" />
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using a virtual environment" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Packages imported by scripts come from the selected Python installation. Install packages into that same Python environment. For a default Python 3.12 user install, run pip from that installation before starting N.I.N.A.
+                            Set PYTHONNET_VENV to the virtual environment root directory, not Scripts\python.exe. The plugin reads pyvenv.cfg, uses the venv executable as the embedded program name, and loads the CPython DLL from the base Python installation recorded by the venv.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">py -3.12 -m pip install package-name</TextBox>
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">PYTHONNET_VENV=C:\Path\To\.venv</TextBox>
+                            </ScrollViewer>
+                        </Border>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Run the setup test after restarting N.I.N.A. A venv is active when the reported Python prefix points to the venv and the Python base prefix points to the base Python installation.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Python packages" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Packages imported by scripts come from the selected Python installation or virtual environment. Install packages into that same environment before starting N.I.N.A.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">C:\Path\To\.venv\Scripts\python.exe -m pip install package-name</TextBox>
                             </ScrollViewer>
                         </Border>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Deployment files" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The plugin deploys its own assembly, configuration files, dependency metadata, and Python.Runtime.dll to the local N.I.N.A. plugin folder. The real CPython DLL remains part of the Python installation and is selected through the default path or PYTHONNET_PYDLL.
+                            The plugin deploys its own assembly, configuration files, dependency metadata, and Python.Runtime.dll to the local N.I.N.A. plugin folder. The real CPython DLL remains part of the Python installation and is selected through the default path, PYTHONNET_PYDLL, or the base Python installation recorded by PYTHONNET_VENV.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="When to use the setup test" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Run the setup test after installing Python, after changing PYTHONNET_PYDLL, after replacing Python.Runtime.dll, or when a Python sequencer item fails before your script code starts. A successful test does not validate camera, telescope, focuser, or other equipment state; it only validates the embedded Python runtime.
+                            Run the setup test after installing Python, after changing PYTHONNET_PYDLL or PYTHONNET_VENV, after replacing Python.Runtime.dll, or when a Python sequencer item fails before your script code starts. A successful test does not validate camera, telescope, focuser, or other equipment state; it only validates the embedded Python runtime.
                         </TextBlock>
                     </StackPanel>
                 </ScrollViewer>
@@ -211,6 +240,9 @@
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="One embedded Python runtime" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             The first script or setup test initializes the embedded Python runtime. The runtime stays initialized until the N.I.N.A. process exits. This avoids repeated CPython initialization and shutdown, which is not reliable for in-process embedding.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            The selected Python installation or virtual environment is process-wide. Change PYTHONNET_PYDLL or PYTHONNET_VENV before the first setup test or script run, then restart N.I.N.A. to switch environments.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Each Python Script instruction execution creates a fresh Python scope. Variables created inside one script are not intentionally injected into the next script scope. Imported Python modules are still normal Python modules, so module-level state can persist for the lifetime of the interpreter.
@@ -719,7 +751,7 @@ token.ThrowIfCancellationRequested()</TextBox>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Importing Python modules" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Imports use the selected Python installation. If the import fails, install the package into that Python environment before starting N.I.N.A.
+                            Imports use the selected Python installation or virtual environment. If the import fails, install the package into that environment before starting N.I.N.A.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -793,12 +825,12 @@ result = phase == "before" and count % 5 == 0</TextBox>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="The setup test fails before showing a Python version" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Check that the Python DLL exists and matches N.I.N.A. bitness. If the default Python 3.12 user install is not used, set PYTHONNET_PYDLL to the exact python312.dll path and restart N.I.N.A.
+                            Check that the Python DLL exists and matches N.I.N.A. bitness. If Python discovery does not find the install you want, set PYTHONNET_PYDLL to the exact Python DLL path or set PYTHONNET_VENV to a venv root directory and restart N.I.N.A.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="ImportError or ModuleNotFoundError" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            The package is not installed in the selected Python environment, or Python is using a different environment than expected. Run the setup test and verify the reported Python executable. Install packages into that environment.
+                            The package is not installed in the selected Python environment, or Python is using a different environment than expected. Run the setup test and verify the reported Python executable, prefix, and base prefix. Install packages into that environment.
                         </TextBlock>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="A file-backed script fails to read" />

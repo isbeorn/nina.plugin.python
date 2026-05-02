@@ -66,9 +66,15 @@ namespace NINA.Plugin.Python {
             InterfaceLookup = CollectionViewSource.GetDefaultView(interfaceLookup);
             InterfaceLookup.Filter = FilterInterfaceLookup;
             TestPythonSetupCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(TestPythonSetup);
+            SetupPythonEnvironmentCommand = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(SetupPythonEnvironment);
+            OpenPythonDownloadCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(OpenPythonDownloadPage);
         }
 
         public ICommand TestPythonSetupCommand { get; }
+
+        public ICommand SetupPythonEnvironmentCommand { get; }
+
+        public ICommand OpenPythonDownloadCommand { get; }
 
         public ICollectionView InterfaceLookup { get; }
 
@@ -108,14 +114,55 @@ namespace NINA.Plugin.Python {
                 PythonSetupStatus =
                     "Python setup test succeeded." + Environment.NewLine +
                     $"Python DLL: {result.PythonDllPath}" + Environment.NewLine +
+                    $"Python virtual environment: {FormatPythonSetupValue(result.VirtualEnvironmentPath)}" + Environment.NewLine +
                     $"Python executable: {result.PythonExecutable}" + Environment.NewLine +
+                    $"Python prefix: {result.PythonPrefix}" + Environment.NewLine +
+                    $"Python base prefix: {result.PythonBasePrefix}" + Environment.NewLine +
+                    $"Is virtual environment: {result.IsVirtualEnvironment}" + Environment.NewLine +
                     $"Python version: {result.PythonVersion}";
             } catch (Exception ex) {
                 PythonSetupStatus =
                     "Python setup test failed." + Environment.NewLine +
                     ex.Message + Environment.NewLine +
-                    "Verify that 64-bit Python 3.12 is installed or set PYTHONNET_PYDLL to the full path of the Python DLL, then restart N.I.N.A.";
+                    "Verify that 64-bit Python 3 is installed, set PYTHONNET_PYDLL to the full path of the Python DLL, or set PYTHONNET_VENV to a virtual environment root directory, then restart N.I.N.A.";
             }
+        }
+
+        private async Task SetupPythonEnvironment() {
+            PythonSetupStatus = "Setting up Python virtual environment...";
+
+            try {
+                var result = await Task.Run(PythonEnvironmentSetup.SetupDefaultVirtualEnvironment);
+                PythonSetupStatus =
+                    "Python virtual environment setup succeeded." + Environment.NewLine +
+                    $"Base Python executable: {result.BasePythonExecutablePath}" + Environment.NewLine +
+                    $"Virtual environment: {result.VirtualEnvironmentPath}" + Environment.NewLine +
+                    $"Virtual environment Python: {result.VirtualEnvironmentPythonPath}" + Environment.NewLine +
+                    $"Created new virtual environment: {result.CreatedVirtualEnvironment}" + Environment.NewLine +
+                    $"{PythonRuntimeManager.PythonVenvEnvironmentVariable} was set for this user." + Environment.NewLine +
+                    (result.RestartRequired
+                        ? "Restart N.I.N.A. before running Python scripts because the embedded Python runtime is already initialized."
+                        : "Run Test Python setup to initialize and verify the virtual environment.");
+            } catch (Exception ex) {
+                PythonSetupStatus =
+                    "Python virtual environment setup failed." + Environment.NewLine +
+                    ex.Message + Environment.NewLine +
+                    "Install 64-bit Python 3, or set PYTHONNET_PYDLL to the full path of the Python DLL, then run setup again.";
+            }
+        }
+
+        private void OpenPythonDownloadPage() {
+            try {
+                PythonEnvironmentSetup.OpenPythonDownloadPage();
+            } catch (Exception ex) {
+                PythonSetupStatus =
+                    "Failed to open the Python download page." + Environment.NewLine +
+                    ex.Message;
+            }
+        }
+
+        private static string FormatPythonSetupValue(string value) {
+            return string.IsNullOrWhiteSpace(value) ? "(none)" : value;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
