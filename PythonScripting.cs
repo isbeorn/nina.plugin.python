@@ -674,6 +674,8 @@ namespace NINA.Plugin.Python {
                 CreateLookupEntry("resourceDictionary", typeof(IApplicationResourceDictionary), "Application", "Application resource dictionary."),
                 CreateLookupEntry("messageBroker", typeof(IMessageBroker), "Application", "Plugin message broker."),
                 CreateLookupEntry("symbolBroker", typeof(ISymbolBroker), "Sequencer", "Sequencer symbol broker."),
+                CreateLookupEntry("symbols", "types.MappingProxyType[str, object]", null, "Sequencer Symbols", "Read-only snapshot of current N.I.N.A. symbol broker values keyed by sanitized Category_Key names, such as NINA_MoonAltitude or Image_HFR."),
+                CreateLookupEntry("symbolFunctions", "types.MappingProxyType[str, callable]", null, "Sequencer Symbols", "Read-only snapshot of current N.I.N.A. symbol broker functions keyed by sanitized Category_Key names, such as Time_Now or Math_Round."),
                 CreateLookupEntry("templateLinkResolver", typeof(ITemplateLinkResolver), "Sequencer", "Template link resolver."),
                 CreateLookupEntry("sequence", typeof(ISequenceMediator), "Sequencer", "Sequence mediator."),
                 CreateLookupEntry("previousItem", typeof(ISequenceItem), "Sequencer Check Context", "Previous sequence item passed to a Python Condition or Python Trigger check. This can be None."),

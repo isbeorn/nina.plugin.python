@@ -278,6 +278,19 @@
                             Injected values such as camera, telescope, imaging, sequence, profileService, and optionsVM are live .NET objects. Calling a method from Python is calling that .NET object directly inside N.I.N.A. Exceptions from .NET or Python propagate back to the sequence item and cause the instruction or condition to fail.
                         </TextBlock>
 
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Symbol broker values and functions" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Each script scope receives a read-only snapshot of current N.I.N.A. symbol broker values and functions. Values are available through the symbols mapping and through direct read-only variables named with sanitized Category_Key names, for example NINA_MoonAltitude or Image_HFR. Functions are available through the symbolFunctions mapping and through direct read-only callables named with sanitized Category_Key names, for example Time_Now() or Math_Round(value, digits). Function arguments are evaluated by Python before the symbol function is invoked. Assigning to one of these names raises a Python syntax error before the script runs.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">moon_altitude = NINA_MoonAltitude
+hfr = symbols["Image_HFR"] if "Image_HFR" in symbols else None
+rounded = Math_Round(moon_altitude, 2)
+now_seconds = symbolFunctions["Time_Now"]()</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Async methods" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             Many N.I.N.A. APIs return .NET Task objects. In a script, wait for those tasks before depending on the result. The simplest pattern is .Wait(). If you need result values from a generic Task, use the .NET task API exposed by pythonnet.
@@ -540,7 +553,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                     <StackPanel Style="{StaticResource DocContentPanel}">
                         <TextBlock Style="{StaticResource DocHeadingText}" Text="Interface Lookup" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Use this table while writing instruction, condition, or trigger scripts. It maps Python variable names to the injected .NET interfaces, helper types, instruction helpers, condition context values, trigger context values, and file-mode context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
+                            Use this table while writing instruction, condition, or trigger scripts. It maps Python variable names to the injected .NET interfaces, helper types, symbol snapshot mappings, instruction helpers, condition context values, trigger context values, and file-mode context values. The filter searches the Python name, interface/type, category, and description. Select a row to show the available members and Python usage directly below it.
                         </TextBlock>
                         <TextBox
                             MinWidth="260"
@@ -759,6 +772,24 @@ token.ThrowIfCancellationRequested()</TextBox>
 
 angle_radians = math.radians(45.0)
 value = math.sin(angle_radians)</TextBox>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using N.I.N.A. symbols" />
+                        <TextBlock Style="{StaticResource DocBodyText}">
+                            Symbol broker values and functions are captured when the script scope is created. Use direct read-only Category_Key variables and callables for symbols and functions that are expected to exist, or use the symbols and symbolFunctions mappings when an entry may not be available yet.
+                        </TextBlock>
+                        <Border Style="{StaticResource DocCodeBorder}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">moon_altitude = NINA_MoonAltitude
+rounded_moon_altitude = Math_Round(moon_altitude, 2)
+
+if "Image_HFR" in symbols:
+    last_hfr = symbols["Image_HFR"]
+else:
+    last_hfr = None
+
+now_seconds = symbolFunctions["Time_Now"]()</TextBox>
                             </ScrollViewer>
                         </Border>
 
