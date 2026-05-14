@@ -159,7 +159,7 @@
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="What must be installed" />
                         <TextBlock Style="{StaticResource DocBodyText}">
                             - 64-bit N.I.N.A. and 64-bit Python must be used together.<LineBreak />
-                            - Without PYTHONNET_PYDLL or PYTHONNET_VENV, the plugin searches for Python through the Python launcher and known Python install folders. It prefers Python 3.12, then the highest discovered Python 3 install.<LineBreak />
+                            - Without PYTHONNET_PYDLL or PYTHONNET_VENV, the plugin searches for Python through the Python launcher and known Python install folders. It uses the Python 3 installation selected by the launcher, or the highest discovered Python 3 install.<LineBreak />
                             - If Python is installed somewhere else, set PYTHONNET_PYDLL to the full path of the Python DLL and restart N.I.N.A.<LineBreak />
                             - To use a virtual environment, set PYTHONNET_VENV to the virtual environment root directory and restart N.I.N.A.<LineBreak />
                             - Python.Runtime.dll is deployed with the plugin. The CPython runtime DLL itself is loaded from your Python installation, not copied into the plugin folder.</TextBlock>
@@ -176,11 +176,11 @@
                             The embedded runtime is loaded through pythonnet. Python must match the bitness of N.I.N.A.; for normal N.I.N.A. installations this means 64-bit Python. A 32-bit Python installation cannot be loaded into a 64-bit process.
                         </TextBlock>
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            A typical user install path is:
+                            A typical user install path uses the installed Python 3 version in the folder and DLL name:
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <TextBox Style="{StaticResource DocCodeText}" Text="%LOCALAPPDATA%\Programs\Python\Python312\python312.dll" />
+                                <TextBox Style="{StaticResource DocCodeText}" Text="%LOCALAPPDATA%\Programs\Python\Python3XX\python3XX.dll" />
                             </ScrollViewer>
                         </Border>
 
@@ -190,7 +190,7 @@
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">PYTHONNET_PYDLL=C:\Path\To\Python312\python312.dll</TextBox>
+                                <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">PYTHONNET_PYDLL=C:\Path\To\Python3XX\python3XX.dll</TextBox>
                             </ScrollViewer>
                         </Border>
                         <TextBlock Style="{StaticResource DocBodyText}">

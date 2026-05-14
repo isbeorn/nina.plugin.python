@@ -9,7 +9,6 @@ namespace NINA.Plugin.Python {
 
     internal static class PythonDiscovery {
         private const string PythonExecutableFileName = "python.exe";
-        private static readonly Version PreferredPythonVersion = new Version(3, 12);
 
         public static PythonInstallation ResolvePythonInstallation() {
             string pythonDllPath = Environment.GetEnvironmentVariable(PythonRuntimeManager.PythonDllEnvironmentVariable);
@@ -17,12 +16,7 @@ namespace NINA.Plugin.Python {
                 return FromDllPath(pythonDllPath);
             }
 
-            var launcherInstallation = TryResolvePythonInstallationFromLauncher("-3.12");
-            if (launcherInstallation != null) {
-                return launcherInstallation;
-            }
-
-            launcherInstallation = TryResolvePythonInstallationFromLauncher("-3");
+            var launcherInstallation = TryResolvePythonInstallationFromLauncher("-3");
             if (launcherInstallation != null) {
                 return launcherInstallation;
             }
@@ -89,9 +83,8 @@ namespace NINA.Plugin.Python {
                     Path = path,
                     Version = TryParseDllVersion(path)
                 })
-                .Where(candidate => candidate.Version != null)
-                .OrderBy(candidate => GetVersionPreference(candidate.Version))
-                .ThenByDescending(candidate => candidate.Version)
+                .Where(candidate => candidate.Version != null && candidate.Version.Major == 3)
+                .OrderByDescending(candidate => candidate.Version)
                 .ToList();
 
             if (candidates.Count > 0) {
@@ -108,8 +101,7 @@ namespace NINA.Plugin.Python {
                 .SelectMany(root => Directory.GetDirectories(root, "Python3*", SearchOption.TopDirectoryOnly))
                 .Select(TryResolvePythonInstallationFromHome)
                 .Where(installation => installation != null)
-                .OrderBy(installation => GetVersionPreference(installation.Version))
-                .ThenByDescending(installation => installation.Version);
+                .OrderByDescending(installation => installation.Version);
         }
 
         private static IEnumerable<string> GetPythonInstallSearchRoots() {
@@ -152,18 +144,6 @@ namespace NINA.Plugin.Python {
             }
 
             return null;
-        }
-
-        private static int GetVersionPreference(Version version) {
-            if (version == null) {
-                return 3;
-            }
-
-            if (version.Major == PreferredPythonVersion.Major && version.Minor == PreferredPythonVersion.Minor) {
-                return 0;
-            }
-
-            return version.Major == 3 ? 1 : 2;
         }
 
         private static Version ResolveVersion(string version, string pythonDllPath) {
