@@ -4,11 +4,18 @@
     <OutputType>Library</OutputType>
     <RootNamespace>NINA.Plugin.Python</RootNamespace>
     <AssemblyName>NINA.Plugin.Python</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AssemblyTitle>Python Scripting</AssemblyTitle>
+    <Title>Python Scripting</Title>
+    <Authors>Stefan Berg @isbeorn</Authors>
+    <Product>Python Scripting</Product>
+    <Description>Python Scripting within N.I.N.A.</Description>
+    <Copyright>Copyright ©  2026</Copyright>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
