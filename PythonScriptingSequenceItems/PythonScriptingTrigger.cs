@@ -295,6 +295,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         private string scriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
 
         [ObservableProperty]
+        private int currentExecutionLine;
+
+        [ObservableProperty]
         [property: JsonProperty]
         private bool scriptPreviewExpanded;
 
@@ -474,6 +477,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
 
         private bool EvaluateTriggerScript(string phase, ISequenceItem previousItem, ISequenceItem nextItem) {
             var scriptToExecute = PythonScriptSourceHelper.GetScriptExecutionSource(ScriptSource, Script, ScriptFilePath);
+            using var executionLineReporter = new PythonScriptExecutionLineReporter(lineNumber => CurrentExecutionLine = lineNumber);
 
             var result = PythonRuntimeManager.Execute(() => {
                 using var scope = Py.CreateScope();
@@ -544,7 +548,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                     scope.Set("__file__", scriptToExecute.FilePath.ToPython());
                 }
 
-                scope.Exec(scriptToExecute.Script);
+                PythonScriptExecutor.Execute(scope, scriptToExecute, executionLineReporter.Report);
 
                 if (!scope.Contains("result")) {
                     throw new SequenceEntityFailedException("Python trigger script must assign a result value.");

@@ -258,6 +258,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         private string scriptPreviewStatus = PythonScriptSourceHelper.PreviewNotLoadedStatus;
 
         [ObservableProperty]
+        private int currentExecutionLine;
+
+        [ObservableProperty]
         [property: JsonProperty]
         private bool scriptPreviewExpanded;
 
@@ -362,6 +365,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         /// <returns></returns>
         public override Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
             var scriptToExecute = PythonScriptSourceHelper.GetScriptExecutionSource(ScriptSource, Script, ScriptFilePath);
+            using var executionLineReporter = new PythonScriptExecutionLineReporter(lineNumber => CurrentExecutionLine = lineNumber);
 
             PythonRuntimeManager.Execute(() => {
                 using var scope = Py.CreateScope();
@@ -429,7 +433,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                     scope.Set("__file__", scriptToExecute.FilePath.ToPython());
                 }
 
-                scope.Exec(scriptToExecute.Script);
+                PythonScriptExecutor.Execute(scope, scriptToExecute, executionLineReporter.Report);
             });
 
             return Task.CompletedTask;
