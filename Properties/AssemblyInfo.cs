@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("9545363a-86d1-4ef5-80d4-c77b8fadcf74")]
 
 // The minimum Version of N.I.N.A. that this plugin is compatible with
-[assembly: AssemblyMetadata("MinimumApplicationVersion", "3.3.0.1034")]
+[assembly: AssemblyMetadata("MinimumApplicationVersion", "3.3.0.1037")]
 
 // The license your plugin code is using
 [assembly: AssemblyMetadata("License", "MPL-2.0")]
