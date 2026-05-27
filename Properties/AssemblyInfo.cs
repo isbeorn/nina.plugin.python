@@ -47,7 +47,7 @@ The plugin uses pythonnet and requires a compatible 64-bit Python 3 installation
 
 ## Script Context
 
-Scripts receive common N.I.N.A. services for profile, equipment, imaging, application, sequencer, plate solving, astronomy, and image data workflows. They also receive a read-only snapshot of N.I.N.A. symbol broker values and functions as `symbols`, `symbolFunctions`, and direct `Category_Key` variables/functions, plus helpers such as cancellation tokens, progress reporting, capture sequence helpers, condition or trigger context, `__file__` for file-based scripts, and selected .NET helper types.
+Scripts receive common N.I.N.A. services for profile, equipment, imaging, application, sequencer, plate solving, astronomy, and image data workflows. They also receive read-only snapshots of N.I.N.A. symbol broker values and functions as `symbols`, `symbolFunctions`, and direct `Category_Key` variables/functions, plus in-scope sequencer variables as `variables`, direct `Var_name` aliases, and the `setVariable` helper. Scripts also receive helpers such as cancellation tokens, progress reporting, capture sequence helpers, condition or trigger context, `__file__` for file-based scripts, and selected .NET helper types.
 
 The plugin does not ship CPython itself.")]
 

@@ -1,4 +1,6 @@
 using NINA.Sequencer.Logic;
+using NINA.Sequencer.Container;
+using NINA.Sequencer.SequenceItem.Expressions;
 using Python.Runtime;
 using System.Collections.Generic;
 
@@ -10,10 +12,15 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         internal const string SymbolFunctionInvokerVariableName = "__nina_symbol_function_invoker";
         internal const string SymbolFunctionNamesVariableName = "__nina_symbol_function_names";
         internal const string SymbolFunctionVariableNamesVariableName = "__nina_symbol_function_variable_names";
+        internal const string SequenceVariableStoreVariableName = "__nina_sequence_variable_store";
+        internal const string SequenceVariableDirectNamesVariableName = "__nina_sequence_variable_direct_names";
+        internal const string SequenceVariableNamesVariableName = "__nina_sequence_variable_names";
 
         private static readonly ISet<string> reservedVariableNames = new HashSet<string> {
             "symbols",
-            "symbolFunctions"
+            "symbolFunctions",
+            "variables",
+            "setVariable"
         };
 
         public static void RegisterSymbolSnapshot(PyModule scope, ISymbolBroker symbolBroker) {
@@ -65,6 +72,68 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             scope.Set(SymbolFunctionInvokerVariableName, functionInvoker);
             scope.Set(SymbolFunctionNamesVariableName, functionNames);
             scope.Set(SymbolFunctionVariableNamesVariableName, functionVariableNames);
+        }
+
+        public static void RegisterSequenceVariableSnapshot(PyModule scope, ISequenceContainer context) {
+            var variableStore = new PythonSequenceVariableStore(context);
+            using var variableStoreObject = variableStore.ToPython();
+            using var directVariableNames = new PyDict();
+            var sequenceVariableNames = new HashSet<string>();
+            var reservedDirectNames = GetReservedDirectNames(scope);
+
+            foreach (var variable in variableStore.GetVariablesInScope()) {
+                string variableName = ToSequenceVariableName(variable);
+
+                if (reservedDirectNames.Contains(variableName)
+                    || scope.Contains(variableName)
+                    || !sequenceVariableNames.Add(variableName)) {
+                    continue;
+                }
+
+                using var directName = variableName.ToPython();
+                using var name = variable.Identifier.ToPython();
+                directVariableNames.SetItem(directName, name);
+            }
+
+            using var variableNames = new PyList();
+            foreach (var variableName in sequenceVariableNames) {
+                using var name = variableName.ToPython();
+                variableNames.Append(name);
+            }
+
+            scope.Set(SequenceVariableStoreVariableName, variableStoreObject);
+            scope.Set(SequenceVariableDirectNamesVariableName, directVariableNames);
+            scope.Set(SequenceVariableNamesVariableName, variableNames);
+        }
+
+        private static ISet<string> GetReservedDirectNames(PyModule scope) {
+            var reservedNames = new HashSet<string>(reservedVariableNames);
+            reservedNames.UnionWith(GetPythonStringSet(scope, SymbolVariableNamesVariableName));
+            reservedNames.UnionWith(GetPythonStringSet(scope, SymbolFunctionVariableNamesVariableName));
+            return reservedNames;
+        }
+
+        private static ISet<string> GetPythonStringSet(PyModule scope, string variableName) {
+            var names = new HashSet<string>();
+            if (scope == null || !scope.Contains(variableName)) {
+                return names;
+            }
+
+            using var values = scope.Get(variableName);
+            int count = checked((int)values.Length());
+
+            for (int i = 0; i < count; i++) {
+                using var value = values.GetItem(i);
+                if (value.AsManagedObject(typeof(string)) is string name) {
+                    names.Add(name);
+                }
+            }
+
+            return names;
+        }
+
+        private static string ToSequenceVariableName(Variable variable) {
+            return $"Var_{SymbolBroker.SanitizeIdentifier(variable.Identifier)}";
         }
 
         private static string ToSymbolVariableName(Symbol symbol) {

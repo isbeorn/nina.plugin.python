@@ -525,6 +525,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                 scope.Set("symbolBroker", this.symbolBroker.ToPython());
                 scope.Set("templateLinkResolver", this.templateLinkResolver.ToPython());
                 PythonScriptScopeHelper.RegisterSymbolSnapshot(scope, this.symbolBroker);
+                PythonScriptScopeHelper.RegisterSequenceVariableSnapshot(scope, Parent);
 
                 // Register trigger context
                 scope.Set("phase", phase.ToPython());

@@ -278,14 +278,17 @@
                             Injected values such as camera, telescope, imaging, sequence, profileService, and optionsVM are live .NET objects. Calling a method from Python is calling that .NET object directly inside N.I.N.A. Exceptions from .NET or Python propagate back to the sequence item and cause the instruction or condition to fail.
                         </TextBlock>
 
-                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Symbol broker values and functions" />
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Symbols and sequencer variables" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Each script scope receives a read-only snapshot of current N.I.N.A. symbol broker values and functions. Values are available through the symbols mapping and through direct read-only variables named with sanitized Category_Key names, for example NINA_MoonAltitude or Image_HFR. Functions are available through the symbolFunctions mapping and through direct read-only callables named with sanitized Category_Key names, for example Time_Now() or Math_Round(value, digits). Function arguments are evaluated by Python before the symbol function is invoked. Assigning to one of these names raises a Python syntax error before the script runs.
+                            Each script scope receives read-only snapshots of current N.I.N.A. symbol broker values and functions, plus a live view of in-scope sequencer variables. Symbol values are available through the symbols mapping and through direct read-only variables named with sanitized Category_Key names, for example NINA_MoonAltitude or Image_HFR. Functions are available through the symbolFunctions mapping and through direct read-only callables named with sanitized Category_Key names, for example Time_Now() or Math_Round(value, digits). Sequencer variables from Define Variable and Define Scoped Variable are available through variables by their N.I.N.A. variable name and through direct read-only Var_name aliases, for example Var_IsObservationParam. Variables that have not been executed or do not currently evaluate have a None value. Use setVariable(variable, value) to update a sequencer variable. Function arguments are evaluated by Python before the symbol function is invoked. Assigning to one of these protected names raises a Python syntax error before the script runs.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                 <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">moon_altitude = NINA_MoonAltitude
-hfr = symbols["Image_HFR"] if "Image_HFR" in symbols else None
+hfr = symbols.get("Image_HFR")
+is_observation_param = variables.get("IsObservationParam")
+direct_observation_param = Var_IsObservationParam
+setVariable(Var_IsObservationParam, 1)
 rounded = Math_Round(moon_altitude, 2)
 now_seconds = symbolFunctions["Time_Now"]()</TextBox>
                             </ScrollViewer>
@@ -775,19 +778,24 @@ value = math.sin(angle_radians)</TextBox>
                             </ScrollViewer>
                         </Border>
 
-                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using N.I.N.A. symbols" />
+                        <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using N.I.N.A. symbols and variables" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Symbol broker values and functions are captured when the script scope is created. Use direct read-only Category_Key variables and callables for symbols and functions that are expected to exist, or use the symbols and symbolFunctions mappings when an entry may not be available yet.
+                            Symbol broker values and functions are captured when the script scope is created. In-scope sequencer variables are read live from N.I.N.A. Use direct read-only Category_Key variables and callables for symbols and functions that are expected to exist, use direct read-only Var_name aliases for sequencer variables that are expected to exist, use the symbols, symbolFunctions, and variables mappings when an entry may not be available yet, and use setVariable to write a sequencer variable.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                 <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">moon_altitude = NINA_MoonAltitude
 rounded_moon_altitude = Math_Round(moon_altitude, 2)
 
-if "Image_HFR" in symbols:
-    last_hfr = symbols["Image_HFR"]
-else:
-    last_hfr = None
+last_hfr = symbols.get("Image_HFR")
+is_observation_param = variables.get("IsObservationParam")
+result = is_observation_param is not None and is_observation_param != 0
+
+setVariable(Var_IsObservationParam, 1)
+result_from_direct_alias = Var_IsObservationParam != 0
+
+# String form also works:
+# setVariable("IsObservationParam", 0)
 
 now_seconds = symbolFunctions["Time_Now"]()</TextBox>
                             </ScrollViewer>

@@ -676,6 +676,8 @@ namespace NINA.Plugin.Python {
                 CreateLookupEntry("symbolBroker", typeof(ISymbolBroker), "Sequencer", "Sequencer symbol broker."),
                 CreateLookupEntry("symbols", "types.MappingProxyType[str, object]", null, "Sequencer Symbols", "Read-only snapshot of current N.I.N.A. symbol broker values keyed by sanitized Category_Key names, such as NINA_MoonAltitude or Image_HFR."),
                 CreateLookupEntry("symbolFunctions", "types.MappingProxyType[str, callable]", null, "Sequencer Symbols", "Read-only snapshot of current N.I.N.A. symbol broker functions keyed by sanitized Category_Key names, such as Time_Now or Math_Round."),
+                CreateLookupEntry("variables", "collections.abc.Mapping[str, object]", null, "Sequencer Variables", "Read-only view of in-scope Define Variable and Define Scoped Variable values keyed by N.I.N.A. variable name, such as IsObservationParam."),
+                CreateLookupEntry("setVariable", "callable(variable, value)", null, "Sequencer Variables", "Updates an in-scope Define Variable or Define Scoped Variable. Pass either the variable name string or a direct Var_name alias, for example setVariable(Var_IsObservationParam, 1)."),
                 CreateLookupEntry("templateLinkResolver", typeof(ITemplateLinkResolver), "Sequencer", "Template link resolver."),
                 CreateLookupEntry("sequence", typeof(ISequenceMediator), "Sequencer", "Sequence mediator."),
                 CreateLookupEntry("previousItem", typeof(ISequenceItem), "Sequencer Check Context", "Previous sequence item passed to a Python Condition or Python Trigger check. This can be None."),
