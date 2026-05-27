@@ -46,7 +46,10 @@
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
-    <Style x:Key="DocCodeText" BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
+    <Style
+        x:Key="DocCodeText"
+        BasedOn="{StaticResource {x:Type TextBox}}"
+        TargetType="{x:Type TextBox}">
         <Setter Property="AcceptsReturn" Value="True" />
         <Setter Property="AcceptsTab" Value="True" />
         <Setter Property="Background" Value="Transparent" />
@@ -76,11 +79,17 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
-    <Style x:Key="LookupCodeCellText" BasedOn="{StaticResource LookupCellText}" TargetType="{x:Type TextBlock}">
+    <Style
+        x:Key="LookupCodeCellText"
+        BasedOn="{StaticResource LookupCellText}"
+        TargetType="{x:Type TextBlock}">
         <Setter Property="FontFamily" Value="Consolas" />
     </Style>
 
-    <Style x:Key="LookupSelectableCellText" BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
+    <Style
+        x:Key="LookupSelectableCellText"
+        BasedOn="{StaticResource {x:Type TextBox}}"
+        TargetType="{x:Type TextBox}">
         <Setter Property="AcceptsReturn" Value="True" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -91,7 +100,10 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
-    <Style x:Key="LookupSelectableCodeCellText" BasedOn="{StaticResource LookupSelectableCellText}" TargetType="{x:Type TextBox}">
+    <Style
+        x:Key="LookupSelectableCodeCellText"
+        BasedOn="{StaticResource LookupSelectableCellText}"
+        TargetType="{x:Type TextBox}">
         <Setter Property="FontFamily" Value="Consolas" />
     </Style>
 
@@ -280,12 +292,14 @@
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Symbols and sequencer variables" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Each script scope receives read-only snapshots of current N.I.N.A. symbol broker values and functions, plus a live view of in-scope sequencer variables. Symbol values are available through the symbols mapping and through direct read-only variables named with sanitized Category_Key names, for example NINA_MoonAltitude or Image_HFR. Functions are available through the symbolFunctions mapping and through direct read-only callables named with sanitized Category_Key names, for example Time_Now() or Math_Round(value, digits). Sequencer variables from Define Variable and Define Scoped Variable are available through variables by their N.I.N.A. variable name and through direct read-only Var_name aliases, for example Var_IsObservationParam. Variables that have not been executed or do not currently evaluate have a None value. Use setVariable(variable, value) to update a sequencer variable. Function arguments are evaluated by Python before the symbol function is invoked. Assigning to one of these protected names raises a Python syntax error before the script runs.
+                            Each script scope receives read-only snapshots of current N.I.N.A. symbol broker values and functions, plus a live view of in-scope sequencer variables. Symbol values are available through the symbols mapping and through direct read-only variables named with sanitized Category_Key names, for example NINA_MoonAltitude or Image_HFR. Functions are available through the symbolFunctions mapping and through direct read-only callables named with sanitized Category_Key names, for example Time_Now() or Math_Round(value, digits). Use getSymbolProvider(name) to get an existing custom symbol provider owned by this plugin, or register it when it does not exist. Sequencer variables from Define Variable and Define Scoped Variable are available through variables by their N.I.N.A. variable name and through direct read-only Var_name aliases, for example Var_IsObservationParam. Variables that have not been executed or do not currently evaluate have a None value. Use setVariable(variable, value) to update a sequencer variable. Function arguments are evaluated by Python before the symbol function is invoked. Assigning to one of these protected names raises a Python syntax error before the script runs.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                 <TextBox xml:space="preserve" Style="{StaticResource DocCodeText}">moon_altitude = NINA_MoonAltitude
 hfr = symbols.get("Image_HFR")
+provider = getSymbolProvider("TestProvider")
+provider.AddOrUpdateSymbol("TestSymbol", Var_TestVar)
 is_observation_param = variables.get("IsObservationParam")
 direct_observation_param = Var_IsObservationParam
 setVariable(Var_IsObservationParam, 1)
@@ -561,10 +575,10 @@ result = phase == "before" and camera_info.Connected</TextBox>
                         <TextBox
                             MinWidth="260"
                             Margin="0,2,0,8"
+                            HorizontalAlignment="Stretch"
                             Background="{DynamicResource SecondaryBackgroundBrush}"
                             BorderBrush="{DynamicResource BorderBrush}"
                             Foreground="{DynamicResource PrimaryBrush}"
-                            HorizontalAlignment="Stretch"
                             Text="{Binding InterfaceLookupFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             ToolTip="Filter by Python name, interface, category, or description" />
                         <DataGrid
@@ -590,9 +604,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                     Header="Python name">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox
-                                                Style="{StaticResource LookupSelectableCellText}"
-                                                Text="{Binding PythonName, Mode=OneWay}" />
+                                            <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding PythonName, Mode=OneWay}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -602,9 +614,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                     Header="Interface / type">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox
-                                                Style="{StaticResource LookupSelectableCellText}"
-                                                Text="{Binding DotNetType, Mode=OneWay}" />
+                                            <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding DotNetType, Mode=OneWay}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -614,9 +624,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                     Header="Category">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox
-                                                Style="{StaticResource LookupSelectableCellText}"
-                                                Text="{Binding Category, Mode=OneWay}" />
+                                            <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding Category, Mode=OneWay}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -626,9 +634,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                     Header="Description">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox
-                                                Style="{StaticResource LookupSelectableCellText}"
-                                                Text="{Binding Description, Mode=OneWay}" />
+                                            <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding Description, Mode=OneWay}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -642,15 +648,9 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                         BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1">
                                         <StackPanel HorizontalAlignment="Left" Orientation="Vertical">
-                                            <TextBlock
-                                                Style="{StaticResource DocSectionHeadingText}"
-                                                Text="{Binding PythonName, StringFormat=Members for {0}}" />
-                                            <TextBlock
-                                                Style="{StaticResource DocBodyText}"
-                                                Text="{Binding Description}" />
-                                            <TextBlock
-                                                Style="{StaticResource DocBodyText}"
-                                                Text="{Binding DotNetType, StringFormat=Interface / type: {0}}" />
+                                            <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="{Binding PythonName, StringFormat=Members for {0}}" />
+                                            <TextBlock Style="{StaticResource DocBodyText}" Text="{Binding Description}" />
+                                            <TextBlock Style="{StaticResource DocBodyText}" Text="{Binding DotNetType, StringFormat=Interface / type: {0}}" />
                                             <DataGrid
                                                 MinHeight="120"
                                                 AutoGenerateColumns="False"
@@ -674,9 +674,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                                         Header="Kind">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBox
-                                                                    Style="{StaticResource LookupSelectableCellText}"
-                                                                    Text="{Binding Kind, Mode=OneWay}" />
+                                                                <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding Kind, Mode=OneWay}" />
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
@@ -686,9 +684,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                                         Header="Signature">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBox
-                                                                    Style="{StaticResource LookupSelectableCodeCellText}"
-                                                                    Text="{Binding Signature, Mode=OneWay}" />
+                                                                <TextBox Style="{StaticResource LookupSelectableCodeCellText}" Text="{Binding Signature, Mode=OneWay}" />
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
@@ -698,9 +694,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                                         Header="Python usage">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBox
-                                                                    Style="{StaticResource LookupSelectableCodeCellText}"
-                                                                    Text="{Binding Usage, Mode=OneWay}" />
+                                                                <TextBox Style="{StaticResource LookupSelectableCodeCellText}" Text="{Binding Usage, Mode=OneWay}" />
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
@@ -710,9 +704,7 @@ result = phase == "before" and camera_info.Connected</TextBox>
                                                         Header="Annotation">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBox
-                                                                    Style="{StaticResource LookupSelectableCellText}"
-                                                                    Text="{Binding Annotation, Mode=OneWay}" />
+                                                                <TextBox Style="{StaticResource LookupSelectableCellText}" Text="{Binding Annotation, Mode=OneWay}" />
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
@@ -780,7 +772,7 @@ value = math.sin(angle_radians)</TextBox>
 
                         <TextBlock Style="{StaticResource DocSectionHeadingText}" Text="Using N.I.N.A. symbols and variables" />
                         <TextBlock Style="{StaticResource DocBodyText}">
-                            Symbol broker values and functions are captured when the script scope is created. In-scope sequencer variables are read live from N.I.N.A. Use direct read-only Category_Key variables and callables for symbols and functions that are expected to exist, use direct read-only Var_name aliases for sequencer variables that are expected to exist, use the symbols, symbolFunctions, and variables mappings when an entry may not be available yet, and use setVariable to write a sequencer variable.
+                            Symbol broker values and functions are captured when the script scope is created. In-scope sequencer variables are read live from N.I.N.A. Use direct read-only Category_Key variables and callables for symbols and functions that are expected to exist, use direct read-only Var_name aliases for sequencer variables that are expected to exist, use the symbols, symbolFunctions, and variables mappings when an entry may not be available yet, use getSymbolProvider to publish custom symbols, and use setVariable to write a sequencer variable.
                         </TextBlock>
                         <Border Style="{StaticResource DocCodeBorder}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -790,6 +782,9 @@ rounded_moon_altitude = Math_Round(moon_altitude, 2)
 last_hfr = symbols.get("Image_HFR")
 is_observation_param = variables.get("IsObservationParam")
 result = is_observation_param is not None and is_observation_param != 0
+
+provider = getSymbolProvider("TestProvider")
+provider.AddOrUpdateSymbol("TestSymbol", Var_TestVar)
 
 setVariable(Var_IsObservationParam, 1)
 result_from_direct_alias = Var_IsObservationParam != 0

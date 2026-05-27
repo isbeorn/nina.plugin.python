@@ -12,6 +12,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
         internal const string SymbolFunctionInvokerVariableName = "__nina_symbol_function_invoker";
         internal const string SymbolFunctionNamesVariableName = "__nina_symbol_function_names";
         internal const string SymbolFunctionVariableNamesVariableName = "__nina_symbol_function_variable_names";
+        internal const string SymbolProviderHelperVariableName = "__nina_symbol_provider_helper";
         internal const string SequenceVariableStoreVariableName = "__nina_sequence_variable_store";
         internal const string SequenceVariableDirectNamesVariableName = "__nina_sequence_variable_direct_names";
         internal const string SequenceVariableNamesVariableName = "__nina_sequence_variable_names";
@@ -20,7 +21,8 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             "symbols",
             "symbolFunctions",
             "variables",
-            "setVariable"
+            "setVariable",
+            "getSymbolProvider"
         };
 
         public static void RegisterSymbolSnapshot(PyModule scope, ISymbolBroker symbolBroker) {
@@ -67,11 +69,13 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             }
 
             using var functionInvoker = new PythonSymbolFunctionInvoker(symbolBroker).ToPython();
+            using var providerHelper = new PythonSymbolProviderHelper(symbolBroker).ToPython();
             scope.Set(SymbolSnapshotVariableName, symbolValues);
             scope.Set(SymbolVariableNamesVariableName, variableNames);
             scope.Set(SymbolFunctionInvokerVariableName, functionInvoker);
             scope.Set(SymbolFunctionNamesVariableName, functionNames);
             scope.Set(SymbolFunctionVariableNamesVariableName, functionVariableNames);
+            scope.Set(SymbolProviderHelperVariableName, providerHelper);
         }
 
         public static void RegisterSequenceVariableSnapshot(PyModule scope, ISequenceContainer context) {

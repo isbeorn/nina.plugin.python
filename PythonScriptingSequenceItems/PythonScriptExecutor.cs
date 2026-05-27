@@ -21,6 +21,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             _nina_symbol_function_names = frozenset(globals().get("__nina_symbol_function_names", ()))
             _nina_symbol_function_variable_names = frozenset(globals().get("__nina_symbol_function_variable_names", ()))
             _nina_sequence_variable_names = frozenset(globals().get("__nina_sequence_variable_names", ()))
+            _nina_protected_helper_names = ("symbols", "symbolFunctions", "variables", "setVariable", "getSymbolProvider")
             symbols = MappingProxyType(__nina_symbol_values)
 
             class _nina_sequence_variables:
@@ -62,6 +63,9 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
             def setVariable(variable, value):
                 _nina_sequence_variable_store.Set(variable, value)
 
+            def getSymbolProvider(name):
+                return __nina_symbol_provider_helper.GetOrCreate(name)
+
             def _nina_make_symbol_function(name):
                 def _nina_symbol_function(*args):
                     return __nina_symbol_function_invoker.Invoke(name, args)
@@ -81,7 +85,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                         (_nina_script_filename, getattr(node, "lineno", 1), getattr(node, "col_offset", 0) + 1, ""))
 
                 def _nina_is_read_only_name(self, name):
-                    return name in _nina_symbol_names or name in _nina_symbol_function_variable_names or name in _nina_sequence_variable_names or name in ("symbols", "symbolFunctions", "variables", "setVariable")
+                    return name in _nina_symbol_names or name in _nina_symbol_function_variable_names or name in _nina_sequence_variable_names or name in _nina_protected_helper_names
 
                 def visit_Name(self, node):
                     if node.id in _nina_symbol_names:
@@ -120,7 +124,7 @@ namespace NINA.Plugin.Python.PythonScriptingTestCategory {
                         if isinstance(node.ctx, (ast.Store, ast.Del)):
                             self._nina_reject(node.id, node)
 
-                    if node.id in ("symbols", "symbolFunctions", "variables", "setVariable") and isinstance(node.ctx, (ast.Store, ast.Del)):
+                    if node.id in _nina_protected_helper_names and isinstance(node.ctx, (ast.Store, ast.Del)):
                         self._nina_reject(node.id, node)
 
                     return node
